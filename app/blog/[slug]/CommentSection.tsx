@@ -7,7 +7,6 @@ interface CommentSectionProps {
 }
 
 export default async function CommentSection({ postId }: CommentSectionProps) {
-	// Fetch comments live for this specific post inside the isolated chunk
 	const commentsList = await db.query.comments.findMany({
 		where: (comments, { eq }) => eq(comments.postId, postId),
 	});
@@ -17,49 +16,86 @@ export default async function CommentSection({ postId }: CommentSectionProps) {
 	);
 
 	return (
-		<section className="space-y-6">
-			<h3 className="text-2xl font-bold text-neutral-100 tracking-tight">
-				Discussion ({sortedComments.length})
-			</h3>
-
-			<div className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl shadow-sm">
-				<h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider border-b border-neutral-800/60 pb-2 mb-2">
-					Leave a Comment
-				</h4>
-				<CommentForm postId={postId} />
+		<section className="space-y-6 sm:space-y-8 relative z-10">
+			{/* Segment Heading Descriptor */}
+			<div className="flex items-center justify-between border-b border-[#3a2418] pb-2">
+				<h3 className="text-lg sm:text-xl font-sans font-bold uppercase tracking-[0.2em] sm:tracking-[0.3em] text-amber-400">
+					The Hearth Ledger
+				</h3>
+				<span className="text-[10px] sm:text-xs font-sans text-amber-600/80 uppercase tracking-widest font-semibold">
+					{sortedComments.length} Inscriptions
+				</span>
 			</div>
 
-			<div className="space-y-4 pt-2">
-				{sortedComments.length === 0 ? (
-					<p className="text-neutral-500 text-sm italic bg-neutral-900 border border-neutral-800 p-5 rounded-xl">
-						No comments yet. Be the first to share your thoughts!
-					</p>
-				) : (
-					sortedComments.map((comment) => (
-						<div
-							key={comment.id}
-							className="p-5 bg-neutral-900 border border-neutral-800 rounded-xl space-y-2 shadow-sm"
-						>
-							<div className="flex items-center justify-between border-b border-neutral-800/50 pb-2">
-								<span className="font-semibold text-blue-400 text-sm">
-									{comment.authorName}
-								</span>
-								<span className="text-neutral-500 text-xs">
-									{new Date(comment.createdAt).toLocaleDateString("en-US", {
-										month: "short",
-										day: "numeric",
-										year: "numeric",
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-								</span>
-							</div>
-							<p className="text-neutral-300 text-sm leading-relaxed whitespace-pre-wrap pt-1">
-								{comment.body}
-							</p>
-						</div>
-					))
-				)}
+			{/* THE WRITING DESK INTERACTION CONTAINER */}
+			<div className="rounded-xl border-2 sm:border-4 border-[#4a3225] bg-linear-to-b from-[#3a2418] to-[#251710] p-3 sm:p-5 shadow-2xl">
+				<div className="bg-[#1f140e] rounded-md border border-[#4a3225]/40 p-4 sm:p-6 shadow-inner">
+					<h4 className="text-xs font-sans font-bold uppercase tracking-widest text-amber-400/90 mb-4 flex items-center gap-2">
+						<span>✒️</span> Dip Quill & Inscribe Chronicle
+					</h4>
+					<CommentForm postId={postId} />
+				</div>
+			</div>
+
+			{/* THE LEATHER-BOUND OPEN GUESTBOOK LEDGER */}
+			<div className="relative rounded-xl border-t-[3px] border-b-[5px] border-x-6 sm:border-x-12 border-[#3a1f10] bg-linear-to-b from-[#fff9e8] via-[#fdf3d6] to-[#f9e7c9] shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden">
+				{/* Book Centerfold / Spine shadow representation strip */}
+				<div className="absolute inset-y-0 left-6 sm:left-12 w-4 bg-linear-to-r from-black/10 via-black/5 to-transparent pointer-events-none z-20" />
+				<div className="absolute inset-0 ledger-page-vignette pointer-events-none z-20" />
+
+				{/* Ledger Headers */}
+				<div className="px-4 sm:px-16 pt-6 sm:pt-8 pb-4 border-b-2 border-amber-950/10 flex items-center justify-between">
+					<h4 className="font-serif text-base sm:text-lg font-black text-amber-950 tracking-wider">
+						Guestbook Registry
+					</h4>
+					<span className="font-sans text-[9px] sm:text-[10px] font-bold tracking-widest text-amber-900/50 uppercase">
+						Tavern Vault
+					</span>
+				</div>
+
+				{/* List Thread inside the continuous page book layout */}
+				<div className="divide-y divide-amber-950/10 px-4 sm:px-16 pb-6 sm:pb-8">
+					{sortedComments.length === 0 ? (
+						<p className="py-12 text-center font-serif italic text-amber-900/60 text-sm">
+							"The pages are clean. No travelers have signed the ledger book yet
+							tonight..."
+						</p>
+					) : (
+						sortedComments.map((comment, index) => {
+							const slantVariance =
+								index % 3 === 0
+									? "rotate-[-0.3deg]"
+									: index % 2 === 0
+										? "rotate-[0.4deg]"
+										: "rotate-0";
+
+							return (
+								<div
+									key={comment.id}
+									className={`py-5 sm:py-6 transition-all duration-200 hover:bg-amber-900/5 px-1 sm:px-2 rounded-xs ${slantVariance}`}
+								>
+									<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between font-sans text-xs mb-1 gap-1">
+										<span className="font-black text-amber-950 tracking-tight flex items-center gap-1.5 font-serif text-sm sm:text-base">
+											🛡️ {comment.authorName}
+										</span>
+										<span className="text-amber-900/60 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wider">
+											{new Date(comment.createdAt).toLocaleDateString("en-US", {
+												month: "short",
+												day: "numeric",
+												hour: "2-digit",
+												minute: "2-digit",
+											})}
+										</span>
+									</div>
+
+									<p className="text-zinc-900 text-sm font-sans leading-relaxed whitespace-pre-wrap font-medium italic pl-3 sm:pl-5 border-l border-amber-950/10 mt-1.5">
+										"{comment.body}"
+									</p>
+								</div>
+							);
+						})
+					)}
+				</div>
 			</div>
 		</section>
 	);

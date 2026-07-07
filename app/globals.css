@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-	--background: #ffffff;
-	--foreground: #171717;
+	--background: #0a0604;
+	--foreground: #f4f4f5;
 }
 
 @theme inline {
@@ -12,15 +12,58 @@
 	--font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--background: #0a0a0a;
-		--foreground: #ededed;
-	}
-}
-
 body {
 	background: var(--background);
 	color: var(--foreground);
-	font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+	/* Shading filters for photorealistic material depth */
+	.ledger-page-vignette {
+		background: radial-gradient(
+			circle at center,
+			transparent 40%,
+			rgba(45, 27, 14, 0.25) 100%
+		);
+	}
+
+	/* Keyframe for unrolling scroll effect */
+	@keyframes unfurl-scroll {
+		from {
+			max-height: 80px;
+			opacity: 0.7;
+			filter: blur(2px);
+		}
+		to {
+			max-height: 2500px;
+			opacity: 1;
+			filter: blur(0px);
+		}
+	}
+
+	/* Convection currents for floating hearth embers */
+	@keyframes float-ember {
+		0% {
+			transform: translateY(0) translateX(0) scale(0.8);
+			opacity: 0;
+		}
+		10% {
+			opacity: 0.7;
+		}
+		50% {
+			transform: translateY(-40vh) translateX(15px) scale(1.1);
+		}
+		100% {
+			transform: translateY(-95vh) translateX(-20px) scale(0.5);
+			opacity: 0;
+		}
+	}
+
+	.animate-unfurl {
+		animation: unfurl-scroll 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+
+	.animate-ember {
+		animation: float-ember linear infinite;
+	}
 }

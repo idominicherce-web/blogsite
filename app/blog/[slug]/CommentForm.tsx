@@ -13,7 +13,6 @@ const initialState: ActionState = {
 	success: false,
 };
 
-// 1. Separate SubmitButton Sub-component to safely utilize useFormStatus()
 function SubmitButton() {
 	const { pending } = useFormStatus();
 
@@ -21,82 +20,91 @@ function SubmitButton() {
 		<button
 			type="submit"
 			disabled={pending}
-			className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 text-white font-medium text-sm rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+			className="
+				w-full sm:w-auto 
+				px-6 py-2.5 
+				border border-amber-900/40 
+				bg-[#fff9e8] hover:bg-[#fdf3d6]
+				font-sans font-extrabold text-xs uppercase tracking-widest text-stone-950 
+				rounded-sm 
+				transition-all duration-200 
+				shadow-md hover:shadow-[0_0_15px_rgba(245,158,11,0.2.5)]
+				hover:scale-[1.01] active:scale-[0.99] 
+				disabled:bg-stone-200 disabled:text-stone-400 disabled:border-stone-300 disabled:cursor-not-allowed 
+				cursor-pointer
+				"
 		>
-			{pending ? "Posting comment..." : "Submit Comment"}
+			{pending ? "Stamping Signet..." : "✒️ Scribe a Note"}
 		</button>
 	);
 }
 
 export default function CommentForm({ postId }: CommentFormProps) {
-	// 2. Wiring up the React 19 useActionState hook
 	const [state, formAction] = useActionState(addCommentAction, initialState);
 
 	return (
-		<form action={formAction} className="space-y-4 pt-4">
-			{/* Hidden input to pass along our strict UUID identifier */}
+		<form action={formAction} className="space-y-5 font-sans">
 			<input type="hidden" name="postId" value={postId} />
 
-			{/* Author Name Input */}
 			<div className="space-y-1">
 				<label
 					htmlFor="authorName"
-					className="block text-sm font-medium text-neutral-300"
+					className="block text-[11px] font-bold uppercase tracking-widest text-amber-300/90"
 				>
-					Your Name
+					Traveler Name / Moniker
 				</label>
 				<input
 					type="text"
 					id="authorName"
 					name="authorName"
 					autoComplete="name"
-					className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-neutral-100 placeholder-neutral-600 text-sm focus:outline-none focus:border-blue-500 transition-colors"
-					placeholder="John Doe"
+					required
+					className="w-full px-4 py-2.5 bg-[#fffdf9] border-2 border-[#4a3225] rounded-sm text-zinc-950 placeholder-stone-400 font-serif italic text-sm focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
+					placeholder="e.g., Sir Roland"
 				/>
 				{state.errors?.authorName && (
-					<p className="text-red-400 text-xs font-medium pt-1">
-						{state.errors.authorName[0]}
+					<p className="text-orange-400 text-xs font-semibold pt-1">
+						⚠️ {state.errors.authorName[0]}
 					</p>
 				)}
 			</div>
 
-			{/* Body Input */}
 			<div className="space-y-1">
 				<label
 					htmlFor="body"
-					className="block text-sm font-medium text-neutral-300"
+					className="block text-[11px] font-bold uppercase tracking-widest text-amber-300/90"
 				>
-					Comment
+					Message
 				</label>
 				<textarea
 					id="body"
 					name="body"
 					rows={4}
-					className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-neutral-100 placeholder-neutral-600 text-sm focus:outline-none focus:border-blue-500 transition-colors resize-y"
-					placeholder="Share your technical thoughts on this topic (minimum 10 characters)..."
+					required
+					className="w-full px-4 py-2.5 bg-[#fffdf9] border-2 border-[#4a3225] rounded-sm text-zinc-950 placeholder-stone-400 font-serif italic text-sm focus:outline-none focus:border-amber-500 transition-colors resize-y shadow-inner"
+					placeholder="Leave your tale or testament written here..."
 				/>
 				{state.errors?.body && (
-					<p className="text-red-400 text-xs font-medium pt-1">
-						{state.errors.body[0]}
+					<p className="text-orange-400 text-xs font-semibold pt-1">
+						⚠️ {state.errors.body[0]}
 					</p>
 				)}
 			</div>
 
-			{/* Global Server Processing Errors */}
 			{state.errors?.global && (
-				<div className="p-3 bg-red-950/50 border border-red-900 rounded-lg text-red-400 text-xs font-medium">
+				<div className="p-3 bg-red-900/20 border border-red-700/40 rounded-xs text-red-300 text-xs font-medium">
 					{state.errors.global[0]}
 				</div>
 			)}
 
-			{/* Success Alert Banner */}
 			{state.success && (
-				<div className="p-3 bg-green-950/50 border border-green-900 rounded-lg text-green-400 text-xs font-medium">
-					✅ Comment added successfully!
+				<div className="p-3 bg-emerald-900/20 border border-emerald-700/40 rounded-xs text-emerald-300 text-xs font-medium font-serif italic">
+					✨ Your parchment scroll has been officially stamped and bound into
+					the master registry ledger!
 				</div>
 			)}
 
-			<div className="pt-2">
+			<div className="pt-1">
 				<SubmitButton />
 			</div>
 		</form>
