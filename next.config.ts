@@ -1,7 +1,10 @@
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	/* config options here */
+	experimental: {
+		cacheComponents: true, // MVP 10: Modern replacement for experimental.ppr
+	},
 };
 
 export default nextConfig;
