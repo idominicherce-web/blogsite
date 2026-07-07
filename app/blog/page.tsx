@@ -16,7 +16,9 @@ export default async function BlogListPage() {
 					<h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
 						T a v e r N
 					</h1>
-					<p className="text-neutral-400 mt-2">Gather by the Hearth</p>
+					<p className="text-neutral-400 mt-2">
+						Check the Board. Gather by the Hearthstone.
+					</p>
 				</header>
 
 				<div className="grid gap-6 md:grid-cols-2">
