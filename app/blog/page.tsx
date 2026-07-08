@@ -1,11 +1,32 @@
 // app/blog/page.tsx
-
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import BlogWrapper from "@/components/BlogWrapper";
 import LeaveBoardButton from "@/components/LeaveBoardButton";
 import QuestBoard from "@/components/QuestBoard";
 import TavernHeader from "@/components/TavernHeader";
 import { db } from "@/lib/db";
+
+export const metadata: Metadata = {
+	// ✅ Fixes absolute asset paths warning for the /blog subpath URL
+	metadataBase: new URL("https://tavernblogs.vercel.app"),
+	title: "The Notice Board",
+	description: "Gather by the hearthstone and read active chronicles.",
+	openGraph: {
+		title: "The Notice Board | Tavern",
+		description: "Gather by the hearthstone and read active chronicles.",
+		url: "https://tavernblogs.vercel.app/blog",
+		images: [
+			{
+				url: "/assets/notice-board.png",
+				width: 1200,
+				height: 630,
+				alt: "The Tavern Notice Board",
+			},
+		],
+		type: "website",
+	},
+};
 
 // 1. Static shell fetches the posts (statically pre-rendered)
 export default async function BlogListPage() {
