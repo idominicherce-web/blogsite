@@ -1,7 +1,32 @@
 // app/page.tsx
+import type { Metadata } from "next";
 import TavernBoard from "@/components/TavernBoard";
 import TavernDoor from "@/components/TavernDoor";
 import TavernWrapper from "@/components/TavernWrapper";
+
+// LANDING PAGE METADATA: Tailored for your entry screen
+export const metadata: Metadata = {
+	// Fixes absolute asset paths warning for the root URL
+	metadataBase: new URL("https://tavernblogs.vercel.app"),
+	title: "The Tavern | Entrance",
+	description:
+		"Push past the iron doors, settle by the hearth fire, and discover active chronicles and articles.",
+	openGraph: {
+		title: "The Tavern | Entrance",
+		description:
+			"Push past the iron doors, settle by the hearth fire, and discover active chronicles and articles.",
+		url: "https://tavernblogs.vercel.app/",
+		images: [
+			{
+				url: "/assets/tavern-entrance.png",
+				width: 1200,
+				height: 630,
+				alt: "The Tavern Entrance",
+			},
+		],
+		type: "website",
+	},
+};
 
 export default function TavernLandingPage() {
 	return (
