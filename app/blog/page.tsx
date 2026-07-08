@@ -8,7 +8,7 @@ import TavernHeader from "@/components/TavernHeader";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
-	// ✅ Fixes absolute asset paths warning for the /blog subpath URL
+	// Fixes absolute asset paths warning for the /blog subpath URL
 	metadataBase: new URL("https://tavernblogs.vercel.app"),
 	title: "The Notice Board",
 	description: "Gather by the hearthstone and read active chronicles.",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 		url: "https://tavernblogs.vercel.app/blog",
 		images: [
 			{
-				url: "/assets/notice-board.png",
+				url: "https://tavernblogs.vercel.app/assets/notice-board.png",
 				width: 1200,
 				height: 630,
 				alt: "The Tavern Notice Board",
