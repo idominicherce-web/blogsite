@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 		url: "https://tavernblogs.vercel.app/",
 		images: [
 			{
-				url: "https://tavernblogs.vercel.app/assets/tavern-entrance.png",
+				url: "https://tavernblogs.vercel.app/assets/tavern-entrance.jpg",
 				width: 1200,
 				height: 630,
 				alt: "The Tavern Entrance",
