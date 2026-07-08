@@ -1,10 +1,13 @@
 // app/blog/page.tsx
-import QuestBoard from "@/components/QuestBoard";
-import TavernHeader from "@/components/TavernHeader";
+
+import { Suspense } from "react";
 import BlogWrapper from "@/components/BlogWrapper";
 import LeaveBoardButton from "@/components/LeaveBoardButton";
+import QuestBoard from "@/components/QuestBoard";
+import TavernHeader from "@/components/TavernHeader";
 import { db } from "@/lib/db";
 
+// 1. Static shell fetches the posts (statically pre-rendered)
 export default async function BlogListPage() {
 	const posts = await db.query.posts.findMany({
 		orderBy: (posts, { desc }) => [desc(posts.createdAt)],
@@ -12,7 +15,6 @@ export default async function BlogListPage() {
 
 	return (
 		<>
-			{/* PORTALLED: Rendered outside the wrapper to bypass overflow clipping completely */}
 			<LeaveBoardButton />
 
 			<BlogWrapper>
@@ -21,8 +23,17 @@ export default async function BlogListPage() {
 						<TavernHeader />
 					</div>
 
+					{/* 2. The grid frame renders as a static shell immediately, 
+					  while dynamic features like dynamic comment badge counts are deferred inside the components.
+					*/}
 					<div className="mt-2 md:mt-6 flex-1 relative z-10">
-						<QuestBoard posts={posts} />
+						<Suspense
+							fallback={
+								<div className="h-40 w-full animate-pulse bg-amber-950/10 rounded-xl" />
+							}
+						>
+							<QuestBoard posts={posts} />
+						</Suspense>
 					</div>
 				</main>
 			</BlogWrapper>
