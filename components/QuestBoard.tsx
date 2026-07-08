@@ -35,7 +35,7 @@ export default function QuestBoard({ posts }: QuestBoardProps) {
 						}}
 					/>
 
-					{/* 🛡️ RUSTIC CAST-IRON CORNER BRACKETS */}
+					{/* RUSTIC CAST-IRON CORNER BRACKETS */}
 					<div className="absolute left-2 top-2 h-5 w-5 border border-zinc-950 bg-linear-to-br from-zinc-700 to-zinc-800 shadow-xs rounded-xs" />
 					<div className="absolute right-2 top-2 h-5 w-5 border border-zinc-950 bg-linear-to-br from-zinc-700 to-zinc-800 shadow-xs rounded-xs" />
 					<div className="absolute bottom-2 left-2 h-5 w-5 border border-zinc-950 bg-linear-to-br from-zinc-700 to-zinc-800 shadow-xs rounded-xs" />
@@ -55,8 +55,8 @@ export default function QuestBoard({ posts }: QuestBoardProps) {
 								</h2>
 
 								<p className="text-sm font-serif italic text-zinc-500 leading-relaxed max-w-xs mx-auto">
-									"No traveler has pinned an active contract or chronicle upon
-									the timber ledger yet."
+									"No traveler has pinned an active note or chronicle upon the
+									ledger yet."
 								</p>
 							</div>
 						</div>

@@ -16,7 +16,7 @@ export default function LeaveBoardButton({
 
 	return (
 		<div
-			className="fixed left-3 z-[9999] md:left-6 transition-all duration-200"
+			className="fixed left-3 z-9999 md:left-6 transition-all duration-200"
 			style={{
 				top: "calc(env(safe-area-inset-top, 0px) + 12px)",
 			}}

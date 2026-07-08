@@ -1,4 +1,7 @@
+// components/QuestCard.tsx
 import Link from "next/link";
+import { Suspense } from "react";
+import { db } from "@/lib/db";
 
 type QuestCardProps = {
 	id: string;
@@ -17,7 +20,21 @@ const rotations = [
 	"rotate-0",
 ];
 
+// 1. THE DYNAMIC PIECE: Reusable fetch component to handle data count independently
+async function CommentCountBadge({ postId }: { postId: string }) {
+	const commentsList = await db.query.comments.findMany({
+		where: (comments, { eq }) => eq(comments.postId, postId),
+	});
+
+	return (
+		<span className="font-sans text-[10px] font-bold uppercase tracking-wider text-amber-900/60 bg-amber-950/5 px-2 py-0.5 rounded-xs">
+			📜 {commentsList.length} Inscriptions
+		</span>
+	);
+}
+
 export default function QuestCard({
+	id,
 	title,
 	body,
 	slug,
@@ -60,7 +77,6 @@ export default function QuestCard({
 					shadow-2xl
 				"
 				style={{
-					// Enforcing distinct, photorealistic parchment paper colors explicitly
 					backgroundColor: "#f5ebd5",
 					backgroundImage: `
 						repeating-linear-gradient(
@@ -101,30 +117,46 @@ export default function QuestCard({
 					"{body}"
 				</p>
 
-				{/* Call to Action Trigger */}
-				<div className="mt-6 pt-1">
-					<Link
-						href={`/blog/${slug}`}
-						className="
-							inline-flex
-							items-center
-							gap-1.5
-							font-sans
-							text-xs
-							font-extrabold
-							uppercase
-							tracking-widest
-							text-amber-950
-							hover:text-amber-800
-							transition-all
-							duration-200
-							group-hover:translate-x-1
-							focus:outline-none
-							focus:underline
-						"
-					>
-						Inspect Scroll →
-					</Link>
+				{/* Footer Navigation & Dynamic Counter Area */}
+				{/* Footer Navigation & Dynamic Counter Area */}
+				<div className="mt-6 pt-3 border-t border-amber-950/10">
+					{/* Added a mobile-first flex wrapper to ensure clean separation on small screens */}
+					<div className="flex flex-col gap-3 xs:flex-row xs:items-center xs:justify-between w-full">
+						{/* Targeted localized suspension frame */}
+						<div className="flex items-center min-h-6">
+							<Suspense
+								fallback={
+									<div className="h-5 w-20 bg-amber-950/10 animate-pulse rounded-xs" />
+								}
+							>
+								<CommentCountBadge postId={id} />
+							</Suspense>
+						</div>
+
+						<Link
+							href={`/blog/${slug}`}
+							className="
+					inline-flex
+					items-center
+					gap-1.5
+					font-sans
+					text-xs
+					font-extrabold
+					uppercase
+					tracking-widest
+					text-amber-950
+					hover:text-amber-800
+					transition-all
+					duration-200
+					group-hover:translate-x-1
+					focus:outline-none
+					focus:underline
+					whitespace-nowrap
+				"
+						>
+							Inspect Scroll →
+						</Link>
+					</div>
 				</div>
 			</div>
 		</article>
