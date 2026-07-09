@@ -84,6 +84,7 @@ export default async function CommentSection({ postId }: CommentSectionProps) {
 												day: "numeric",
 												hour: "2-digit",
 												minute: "2-digit",
+												timeZone: "Asia/Manila", // Forces both Server and Client to render PH time
 											})}
 										</span>
 									</div>
