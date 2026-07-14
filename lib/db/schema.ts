@@ -5,10 +5,12 @@ import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // 1. Posts Table
 export const posts = pgTable("posts", {
-	id: uuid("id").primaryKey().defaultRandom(),
+	id: uuid("id").defaultRandom().primaryKey(),
 	title: text("title").notNull(),
 	slug: text("slug").notNull().unique(),
 	body: text("body").notNull(),
+	// Add the tags column as a text array in PostgreSQL
+	tags: text("tags").array(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

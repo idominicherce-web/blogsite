@@ -5,11 +5,11 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { posts } from "@/lib/db/schema";
 
-// Post Validation Schema (Title and Body criteria)
 const createPostSchema = z.object({
-	title: z.string().min(5, "Title must be at least 5 characters long").max(100),
-	body: z.string().min(20, "Content must be at least 20 characters long"),
-	password: z.string().min(1, "Admin password is required"),
+	title: z.string().min(5, "Title must be at least 5 characters").max(100),
+	body: z.string().min(20, "Body must be at least 20 characters"),
+	password: z.string().min(1, "Password is required"),
+	tags: z.string().optional(),
 });
 
 export type ActionState = {
@@ -18,12 +18,13 @@ export type ActionState = {
 		title?: string[];
 		body?: string[];
 		password?: string[];
+		tags?: string[];
 		global?: string[];
 	};
-	// Keep track of the inputs to restore them on failure
 	fields?: {
 		title?: string;
 		body?: string;
+		tags?: string; // FIX: type definition to match raw input string values
 	};
 	redirectTo?: string;
 };
@@ -32,14 +33,16 @@ export async function createPost(
 	_prevState: ActionState,
 	formData: FormData,
 ): Promise<ActionState> {
-	// Extract raw values first so we can return them if validation fails
 	const rawTitle = formData.get("title")?.toString() || "";
 	const rawBody = formData.get("body")?.toString() || "";
+	const rawTags = formData.get("tags")?.toString() || "";
 
+	// FIX: Pass the raw string to safeParse so Zod doesn't reject an array structure
 	const validatedFields = createPostSchema.safeParse({
 		title: rawTitle,
 		body: rawBody,
 		password: formData.get("password")?.toString() || "",
+		tags: rawTags,
 	});
 
 	if (!validatedFields.success) {
@@ -49,11 +52,12 @@ export async function createPost(
 			fields: {
 				title: rawTitle,
 				body: rawBody,
+				tags: rawTags,
 			},
 		};
 	}
 
-	const { title, body, password } = validatedFields.data;
+	const { title, body, password, tags } = validatedFields.data;
 
 	const ADMIN_PASSWORD = process.env.ADMIN_SECRET || "tavern2026";
 	if (password !== ADMIN_PASSWORD) {
@@ -62,13 +66,21 @@ export async function createPost(
 			errors: {
 				password: ["The gatekeeper rejects your password! Access denied."],
 			},
-			// Retain the fields so they don't clear out on password failure
 			fields: {
 				title,
 				body,
+				tags,
 			},
 		};
 	}
+
+	// FORMATTING: Split tags string cleanly into a trimmed array for PostgreSQL
+	const tagArray = tags
+		? tags
+				.split(",")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0)
+		: null;
 
 	try {
 		const slug = title
@@ -84,14 +96,16 @@ export async function createPost(
 			return {
 				success: false,
 				errors: { title: ["A post with a similar title already exists."] },
-				fields: { title, body },
+				fields: { title, body, tags },
 			};
 		}
 
+		// Explicitly append the generated tag array mapping to your Drizzle values
 		await db.insert(posts).values({
 			title,
 			slug,
 			body,
+			tags: tagArray,
 		});
 
 		return {
@@ -106,7 +120,7 @@ export async function createPost(
 					"The scroll could not be inscribed due to a database anomaly.",
 				],
 			},
-			fields: { title, body },
+			fields: { title, body, tags },
 		};
 	}
 }
