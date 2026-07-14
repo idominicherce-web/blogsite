@@ -8,6 +8,13 @@
 			"when": 1783307131922,
 			"tag": "0000_brainy_amphibian",
 			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1783996971205,
+			"tag": "0001_sturdy_jigsaw",
+			"breakpoints": true
 		}
 	]
 }

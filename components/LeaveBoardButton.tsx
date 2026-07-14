@@ -21,7 +21,7 @@ export default function LeaveBoardButton({
 				top: "calc(env(safe-area-inset-top, 0px) + 12px)",
 			}}
 		>
-			{/* AMBIENT BACK-GLOW RING: Subtle breathing animation underneath to draw mobile eye focus */}
+			{/* AMBIENT BACK-GLOW RING */}
 			<div className="absolute inset-0 rounded-full bg-amber-500/10 blur-md md:hidden animate-pulse pointer-events-none" />
 
 			<button
@@ -33,15 +33,17 @@ export default function LeaveBoardButton({
 					inline-flex
 					items-center
 					justify-center
-					gap-2
-					/* MAKING IT ROUND: Full radius circle by default */
+					/* Keep the gap at 0 on mobile so the circle behaves symmetrically */
+					gap-0 md:gap-2
 					rounded-full
 					
-					/* HIGH MOBILE VISIBILITY: Thicker, high-contrast border and a permanent golden depth shadow */
+					/* HIGH MOBILE VISIBILITY */
+					border-2
 					border-amber-500/60 md:border-amber-950/60
-					bg-linear-to-b from-[#3a2012] via-[#1f1007] to-[#120a05] md:shadow-md
+					bg-linear-to-b from-[#3a2012] via-[#1f1007] to-[#120a05]
+					shadow-[0_4px_12px_rgba(245,158,11,0.25)] md:shadow-md
 					
-					/* RESPONSIVE SHAPE: Perfect 1:1 circle aspect ratio on mobile, pill shape on desktop */
+					/* RESPONSIVE SHAPE */
 					h-10 w-10 md:h-auto md:w-auto
 					p-0 md:px-5 md:py-2.5
 					
@@ -58,13 +60,25 @@ export default function LeaveBoardButton({
 					hover:border-amber-400
 					hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]
 					cursor-pointer
+					group
 				"
 				aria-label={text}
 			>
-				{/* The icon arrow - Made bolder and slightly larger on mobile touch targets */}
-				<span className="text-sm md:text-xs font-black translate-x-[-0.5px] md:translate-x-0">
-					←
-				</span>
+				{/* High-contrast vector SVG arrow that scales and centers flawlessly */}
+				<svg
+					className="h-4.5 w-4.5 md:h-3.5 md:w-3.5 text-amber-400 md:text-amber-500/80 transition-transform duration-200 group-hover:-translate-x-0.5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					strokeWidth="3"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M15 19l-7-7 7-7"
+					/>
+				</svg>
 
 				{/* The text layout expands naturally on wider viewports */}
 				<span className="hidden md:inline">{text}</span>

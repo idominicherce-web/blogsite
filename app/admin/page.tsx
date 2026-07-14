@@ -19,19 +19,18 @@ export default function AdminNewPostPage() {
 	const router = useRouter();
 	const [, startTransition] = useTransition();
 
-	// Controlled states to preserve inputs across form submission states
 	const [title, setTitle] = useState("");
 	const [body, setBody] = useState("");
+	const [tags, setTags] = useState(""); // FIX: Added state control management for post tags
 
-	// Sync state fields back to inputs when the Server Action returns errors
 	useEffect(() => {
 		if (state.fields) {
 			setTitle(state.fields.title ?? "");
 			setBody(state.fields.body ?? "");
+			setTags(state.fields.tags ?? ""); // FIX: Synchronize tags back on server action errors
 		}
 	}, [state.fields]);
 
-	// Redirect cleanly upon successful insertion
 	useEffect(() => {
 		if (!state.success || !state.redirectTo) return;
 
@@ -45,11 +44,9 @@ export default function AdminNewPostPage() {
 
 	return (
 		<div className="relative min-h-screen bg-[#090604] text-amber-100 flex flex-col items-center justify-center p-4 sm:p-6 select-none overflow-x-hidden">
-			{/* Quick Escape Vector */}
 			<LeaveBoardButton text="Back to Blog" href="/blog" />
 
 			<div className="w-full max-w-xl bg-linear-to-b from-[#1b1009] via-[#120a05] to-[#0a0502] border-2 border-amber-950/40 rounded-sm p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.85)] relative mt-12">
-				{/* Top Trim Highlight Decor */}
 				<div className="absolute top-0 inset-x-0 h-0.5 bg-linear-to-r from-transparent via-amber-500/40 to-transparent" />
 
 				<header className="mb-8 text-center">
@@ -83,6 +80,31 @@ export default function AdminNewPostPage() {
 						{state.errors?.title && (
 							<span className="text-[11px] font-medium text-red-400/90 tracking-wide mt-0.5">
 								✦ {state.errors.title[0]}
+							</span>
+						)}
+					</div>
+
+					{/* TAGS INPUT FIELD ELEMENT */}
+					<div className="flex flex-col gap-1.5">
+						<label
+							htmlFor="tags"
+							className="text-xs font-bold uppercase tracking-[0.15em] text-amber-500/80"
+						>
+							Scroll Categories / Tags (Comma-separated)
+						</label>
+						<input
+							type="text"
+							id="tags"
+							name="tags"
+							disabled={isPending}
+							value={tags}
+							onChange={(e) => setTags(e.target.value)}
+							className="w-full bg-[#0d0704] border border-amber-950/60 focus:border-amber-500/50 rounded-xs p-3 font-sans text-sm text-amber-100 outline-none placeholder-zinc-700 transition-all shadow-inner"
+							placeholder="e.g., Lore, Quests, Dragon"
+						/>
+						{state.errors?.tags && (
+							<span className="text-[11px] font-medium text-red-400/90 tracking-wide mt-0.5">
+								✦ {state.errors.tags[0]}
 							</span>
 						)}
 					</div>
@@ -125,7 +147,6 @@ export default function AdminNewPostPage() {
 							id="password"
 							name="password"
 							disabled={isPending}
-							// 🔒 Kept completely uncontrolled so it clears out cleanly on every attempt
 							className="w-full bg-[#0d0704] border border-amber-950/60 focus:border-amber-500/50 rounded-xs p-3 font-sans text-sm text-amber-100 tracking-widest outline-none placeholder-zinc-700 transition-all shadow-inner"
 							placeholder="••••••••"
 						/>
