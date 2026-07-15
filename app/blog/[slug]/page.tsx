@@ -10,10 +10,15 @@ import CommentSection from "./CommentSection";
 
 interface PageProps {
 	params: Promise<{ slug: string }>;
+	searchParams: Promise<{ admin?: string }>;
 }
 
-export default async function BlogPostPage({ params }: PageProps) {
+export default async function BlogPostPage({
+	params,
+	searchParams,
+}: PageProps) {
 	const { slug } = await params;
+	const { admin } = await searchParams;
 
 	const post = await db.query.posts.findFirst({
 		where: eq(posts.slug, slug),
@@ -23,28 +28,34 @@ export default async function BlogPostPage({ params }: PageProps) {
 		notFound();
 	}
 
+	const ADMIN_PASSWORD = process.env.ADMIN_SECRET || "tavern2026";
+	const isAdmin = admin === ADMIN_PASSWORD;
+
 	return (
 		<>
-			{/* PORTALLED & REUSED: Contextually reconfigured for the chronicles list stream path */}
 			<LeaveBoardButton text="Leave Chronicles" href="/blog" />
 
 			<PostWrapper>
-				{/* Reduced top padding on mobile (pt-4) since our fixed button safely shifts outside the container frame */}
 				<main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-12 md:space-y-16 relative z-10 pt-4 md:pt-16">
-					<nav className="flex items-center justify-end relative z-20">
+					<nav className="flex items-center justify-between relative z-20">
+						{isAdmin ? (
+							<span className="text-[10px] font-sans text-emerald-400 font-extrabold tracking-widest uppercase bg-emerald-950/40 border border-emerald-800/50 px-2 py-0.5 rounded-xs animate-pulse">
+								🛡️ Admin Mode Active
+							</span>
+						) : (
+							<div />
+						)}
 						<span className="text-[10px] font-sans text-zinc-400 tracking-widest uppercase">
 							Notice No. #{post.id.slice(0, 6)}
 						</span>
 					</nav>
 
-					{/* THE HIGH-CONTRAST UNFLURLED SCROLL */}
 					<div className="relative pt-6 pb-8 transition-all duration-500 group-hover/tavern:drop-shadow-[0_0_50px_rgba(245,158,11,0.08)]">
 						<div className="absolute top-0 inset-x-2 sm:inset-x-4 h-5 rounded-full bg-linear-to-b from-[#2a170c] via-[#4a2e1b] to-[#1f1007] border border-stone-950 shadow-md z-30 flex items-center justify-between px-6">
 							<div className="w-2 h-2 bg-yellow-600/50 rounded-full border border-yellow-800 shadow-xs" />
 							<div className="w-2 h-2 bg-yellow-600/50 rounded-full border border-yellow-800 shadow-xs" />
 						</div>
 
-						{/* HIGH-CONTRAST PARCHMENT SCROLL ARTIFACT */}
 						<article className="relative mx-1 sm:mx-3 px-4 sm:px-16 py-10 sm:py-12 bg-linear-to-b from-[#fff9e8] via-[#fdf3d6] to-[#f9e7c9] text-zinc-900 border-x-8 sm:border-x-12 border-amber-900/10 z-10 rounded-sm shadow-[0_25px_60px_rgba(0,0,0,0.5),0_40px_100px_rgba(234,88,12,0.15),inset_0_-20px_80px_rgba(217,119,6,0.1)]">
 							<div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_40px_rgba(139,92,26,0.15)] sm:shadow-[inset_0_0_60px_rgba(139,92,26,0.2)] mix-blend-multiply" />
 							<div className="pointer-events-none absolute inset-0 bg-radial from-transparent via-transparent to-amber-900/10 mix-blend-color-burn opacity-80" />
@@ -107,7 +118,12 @@ export default async function BlogPostPage({ params }: PageProps) {
 								</div>
 							}
 						>
-							<CommentSection postId={post.id} />
+							{/* 🔌 Correctly matching fields dispatched down to child types */}
+							<CommentSection
+								postId={post.id}
+								postSlug={slug}
+								isAdmin={isAdmin}
+							/>
 						</Suspense>
 					</div>
 				</main>

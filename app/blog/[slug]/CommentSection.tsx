@@ -1,17 +1,31 @@
 // app/blog/[slug]/CommentSection.tsx
+import ModeratorToggle from "@/components/ModeratorToggle";
 import { db } from "@/lib/db";
 import CommentForm from "./CommentForm";
 
+// Extended to match layout properties dispatched from parent page loop
 interface CommentSectionProps {
 	postId: string;
+	postSlug: string;
+	isAdmin: boolean;
 }
 
-export default async function CommentSection({ postId }: CommentSectionProps) {
+export default async function CommentSection({
+	postId,
+	postSlug,
+	isAdmin,
+}: CommentSectionProps) {
 	const commentsList = await db.query.comments.findMany({
 		where: (comments, { eq }) => eq(comments.postId, postId),
 	});
 
-	const sortedComments = [...commentsList].sort(
+	// Filter down unapproved posts instantly from normal traveler viewports
+	const visibleComments = commentsList.filter((comment) => {
+		const isApproved = comment.approved ?? true;
+		return isApproved || isAdmin;
+	});
+
+	const sortedComments = [...visibleComments].sort(
 		(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
 	);
 
@@ -69,24 +83,45 @@ export default async function CommentSection({ postId }: CommentSectionProps) {
 										? "rotate-[0.4deg]"
 										: "rotate-0";
 
+							// Stylize dynamic fade mask over hidden notes when viewing in admin mode
+							const isApproved = comment.approved ?? true;
+
 							return (
 								<div
 									key={comment.id}
-									className={`py-5 sm:py-6 transition-all duration-200 hover:bg-amber-900/5 px-1 sm:px-2 rounded-xs ${slantVariance}`}
+									className={`py-5 sm:py-6 transition-all duration-200 hover:bg-amber-900/5 px-1 sm:px-2 rounded-xs ${slantVariance} ${
+										!isApproved ? "opacity-50 bg-rose-900/5" : ""
+									}`}
 								>
-									<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between font-sans text-xs mb-1 gap-1">
+									<div className="flex items-center justify-between font-sans text-xs mb-1 gap-2">
 										<span className="font-black text-amber-950 tracking-tight flex items-center gap-1.5 font-serif text-sm sm:text-base">
 											🛡️ {comment.authorName}
 										</span>
-										<span className="text-amber-900/60 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wider">
-											{new Date(comment.createdAt).toLocaleDateString("en-US", {
-												month: "short",
-												day: "numeric",
-												hour: "2-digit",
-												minute: "2-digit",
-												timeZone: "Asia/Manila", // Forces both Server and Client to render PH time
-											})}
-										</span>
+
+										{/* Align timestamp and moderator control badge actions horizontally */}
+										<div className="flex items-center gap-3">
+											{/* THE TRIGGER SWITCH: Render only if admin permissions match */}
+											{isAdmin && (
+												<ModeratorToggle
+													commentId={comment.id}
+													isApproved={isApproved}
+													postSlug={postSlug}
+												/>
+											)}
+
+											<span className="text-amber-900/60 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wider whitespace-nowrap">
+												{new Date(comment.createdAt).toLocaleDateString(
+													"en-US",
+													{
+														month: "short",
+														day: "numeric",
+														hour: "2-digit",
+														minute: "2-digit",
+														timeZone: "Asia/Manila",
+													},
+												)}
+											</span>
+										</div>
 									</div>
 
 									<p className="text-zinc-900 text-sm font-sans leading-relaxed whitespace-pre-wrap font-medium italic pl-3 sm:pl-5 border-l border-amber-950/10 mt-1.5">

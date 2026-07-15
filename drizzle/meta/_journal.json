@@ -15,6 +15,13 @@
 			"when": 1783996971205,
 			"tag": "0001_sturdy_jigsaw",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1783999658274,
+			"tag": "0002_watery_miracleman",
+			"breakpoints": true
 		}
 	]
 }
