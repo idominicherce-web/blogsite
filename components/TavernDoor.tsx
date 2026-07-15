@@ -1,3 +1,4 @@
+// components/TavernDoor.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -9,18 +10,18 @@ export default function TavernDoor() {
 	const router = useRouter();
 
 	return (
-		<div className="flex justify-center select-none p-4 relative">
-			{/* HIGH-VISIBILITY MOBILE LAYER: Subtle golden backlight halo to pop the arch outline against black backgrounds */}
-			<div className="absolute inset-0 mx-auto w-[52vw] max-w-76 rounded-t-[9rem] bg-amber-500/10 blur-2xl pointer-events-none z-0" />
+		// 💡 FIX: Removed relative paddings and bounds. Let the parent container's width dictate size.
+		<div className="w-full h-full select-none relative">
+			{/* HIGH-VISIBILITY BACKLIGHT HALO */}
+			<div className="absolute inset-0 mx-auto w-[110%] rounded-t-[9rem] bg-amber-500/10 blur-2xl pointer-events-none z-0" />
 
 			{/* STATIC STONE ARCHWAY */}
 			<div
 				className="
 				relative
 				z-10
-				w-[48vw]
-				max-w-70
-				min-w-47.5
+				w-full
+				h-full
 				aspect-[3/4.2]
 				rounded-t-[8rem]
 				rounded-b-md
@@ -96,7 +97,7 @@ export default function TavernDoor() {
 							shadow-[8px_0_35px_rgba(0,0,0,0.85)]
 						"
 					>
-						{/* Wood Slats Overlay - Increased opacity to 45% so it's readable on mobile screens */}
+						{/* Wood Slats Overlay */}
 						<div
 							className="absolute inset-0 rounded-t-[7.2rem] rounded-b-xs opacity-45 pointer-events-none"
 							style={{
@@ -104,7 +105,7 @@ export default function TavernDoor() {
 							}}
 						/>
 
-						{/* Highlights along the outer edges to give the door three-dimensional thickness */}
+						{/* Highlights along the outer edges */}
 						<div className="absolute inset-px rounded-t-[7.1rem] rounded-b-xs border border-amber-500/15 pointer-events-none z-20" />
 
 						<motion.div

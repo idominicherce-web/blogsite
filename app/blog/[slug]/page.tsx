@@ -146,7 +146,7 @@ export default async function BlogPostPage({
 								</div>
 							}
 						>
-							{/* 🔌 Correctly matching fields dispatched down to child types */}
+							{/* Correctly matching fields dispatched down to child types */}
 							<CommentSection
 								postId={post.id}
 								postSlug={slug}
