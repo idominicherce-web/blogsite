@@ -1,4 +1,6 @@
 // components/QuestCard.tsx
+
+import { and, eq } from "drizzle-orm"; //
 import Link from "next/link";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
@@ -10,7 +12,7 @@ type QuestCardProps = {
 	slug: string;
 	createdAt: Date;
 	index: number;
-};
+}; //
 
 const rotations = [
 	"-rotate-2",
@@ -18,19 +20,23 @@ const rotations = [
 	"-rotate-1",
 	"rotate-2",
 	"rotate-0",
-];
+]; //
 
-// 1. THE DYNAMIC PIECE: Reusable fetch component to handle data count independently
+// 1. THE DYNAMIC PIECE: Fetch and count ONLY approved, visible comments
 async function CommentCountBadge({ postId }: { postId: string }) {
 	const commentsList = await db.query.comments.findMany({
-		where: (comments, { eq }) => eq(comments.postId, postId),
+		where: (comments) =>
+			and(
+				eq(comments.postId, postId),
+				eq(comments.approved, true), // 👈 Changed from 'isApproved' to 'approved'
+			),
 	});
 
 	return (
 		<span className="font-sans text-[10px] font-bold uppercase tracking-wider text-amber-900/60 bg-amber-950/5 px-2 py-0.5 rounded-xs">
 			📜 {commentsList.length} Inscriptions
 		</span>
-	);
+	); //
 }
 
 export default function QuestCard({
@@ -41,7 +47,7 @@ export default function QuestCard({
 	createdAt,
 	index,
 }: QuestCardProps) {
-	const rotation = rotations[index % rotations.length];
+	const rotation = rotations[index % rotations.length]; //
 
 	return (
 		<article
@@ -118,9 +124,7 @@ export default function QuestCard({
 				</p>
 
 				{/* Footer Navigation & Dynamic Counter Area */}
-				{/* Footer Navigation & Dynamic Counter Area */}
 				<div className="mt-6 pt-3 border-t border-amber-950/10">
-					{/* Added a mobile-first flex wrapper to ensure clean separation on small screens */}
 					<div className="flex flex-col gap-3 xs:flex-row xs:items-center xs:justify-between w-full">
 						{/* Targeted localized suspension frame */}
 						<div className="flex items-center min-h-6">
@@ -136,23 +140,23 @@ export default function QuestCard({
 						<Link
 							href={`/blog/${slug}`}
 							className="
-					inline-flex
-					items-center
-					gap-1.5
-					font-sans
-					text-xs
-					font-extrabold
-					uppercase
-					tracking-widest
-					text-amber-950
-					hover:text-amber-800
-					transition-all
-					duration-200
-					group-hover:translate-x-1
-					focus:outline-none
-					focus:underline
-					whitespace-nowrap
-				"
+								inline-flex
+								items-center
+								gap-1.5
+								font-sans
+								text-xs
+								font-extrabold
+								uppercase
+								tracking-widest
+								text-amber-950
+								hover:text-amber-800
+								transition-all
+								duration-200
+								group-hover:translate-x-1
+								focus:outline-none
+								focus:underline
+								whitespace-nowrap
+							"
 						>
 							Inspect Scroll →
 						</Link>
@@ -160,5 +164,5 @@ export default function QuestCard({
 				</div>
 			</div>
 		</article>
-	);
+	); //
 }

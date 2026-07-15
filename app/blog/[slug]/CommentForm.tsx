@@ -1,7 +1,7 @@
 // app/blog/[slug]/CommentForm.tsx
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { type ActionState, addCommentAction } from "../actions";
 
@@ -28,7 +28,7 @@ function SubmitButton() {
 				font-sans font-extrabold text-xs uppercase tracking-widest text-stone-950 
 				rounded-sm 
 				transition-all duration-200 
-				shadow-md hover:shadow-[0_0_15px_rgba(245,158,11,0.2.5)]
+				shadow-md hover:shadow-[0_0_15px_rgba(245,158,11,0.25)]
 				hover:scale-[1.01] active:scale-[0.99] 
 				disabled:bg-stone-200 disabled:text-stone-400 disabled:border-stone-300 disabled:cursor-not-allowed 
 				cursor-pointer
@@ -41,6 +41,18 @@ function SubmitButton() {
 
 export default function CommentForm({ postId }: CommentFormProps) {
 	const [state, formAction] = useActionState(addCommentAction, initialState);
+
+	// 1. LOCAL CLIENT STATE: Safeguards written progress from resetting on server-action feedback
+	const [authorName, setAuthorName] = useState("");
+	const [body, setBody] = useState("");
+
+	// 2. SUCCESS RESET TRIGGER: Only wipes the writing slate clean when officially bound to the database
+	useEffect(() => {
+		if (state.success) {
+			setAuthorName("");
+			setBody("");
+		}
+	}, [state.success]);
 
 	return (
 		<form action={formAction} className="space-y-5 font-sans">
@@ -59,6 +71,8 @@ export default function CommentForm({ postId }: CommentFormProps) {
 					name="authorName"
 					autoComplete="name"
 					required
+					value={authorName}
+					onChange={(e) => setAuthorName(e.target.value)}
 					className="w-full px-4 py-2.5 bg-[#fffdf9] border-2 border-[#4a3225] rounded-sm text-zinc-950 placeholder-stone-400 font-serif italic text-sm focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
 					placeholder="e.g., Sir Roland"
 				/>
@@ -81,6 +95,8 @@ export default function CommentForm({ postId }: CommentFormProps) {
 					name="body"
 					rows={4}
 					required
+					value={body}
+					onChange={(e) => setBody(e.target.value)}
 					className="w-full px-4 py-2.5 bg-[#fffdf9] border-2 border-[#4a3225] rounded-sm text-zinc-950 placeholder-stone-400 font-serif italic text-sm focus:outline-none focus:border-amber-500 transition-colors resize-y shadow-inner"
 					placeholder="Leave your tale or testament written here..."
 				/>
