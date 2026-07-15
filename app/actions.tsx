@@ -61,7 +61,7 @@ export async function createPost(
 
 	const { title, body, password, tags } = validatedFields.data;
 
-	const ADMIN_PASSWORD = process.env.ADMIN_SECRET || "tavern2026";
+	const ADMIN_PASSWORD = process.env.ADMIN_SECRET;
 	if (password !== ADMIN_PASSWORD) {
 		return {
 			success: false,

@@ -28,7 +28,7 @@ export default async function BlogPostPage({
 		notFound();
 	}
 
-	const ADMIN_PASSWORD = process.env.ADMIN_SECRET || "tavern2026";
+	const ADMIN_PASSWORD = process.env.ADMIN_SECRET;
 	const isAdmin = admin === ADMIN_PASSWORD;
 
 	return (
@@ -37,15 +37,43 @@ export default async function BlogPostPage({
 
 			<PostWrapper>
 				<main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-12 md:space-y-16 relative z-10 pt-4 md:pt-16">
-					<nav className="flex items-center justify-between relative z-20">
+					{/* Adjust the top bar's padding-left on mobile to clear the fixed circular back button */}
+					{/* app/blog/[slug]/page.tsx */}
+
+					{/* Upgraded to z-50, pl-14 to clear the button perfectly, and flex-wrap to prevent squeeze */}
+					<nav className="flex flex-wrap items-center justify-between gap-2 pl-14 sm:pl-0 relative z-50">
+						{/* 🛡️ VISUAL ADMINISTRATOR CONFIRMATION HUD */}
 						{isAdmin ? (
-							<span className="text-[10px] font-sans text-emerald-400 font-extrabold tracking-widest uppercase bg-emerald-950/40 border border-emerald-800/50 px-2 py-0.5 rounded-xs animate-pulse">
+							<span
+								className="
+								inline-flex
+								items-center
+								whitespace-nowrap
+								text-[9px]
+								sm:text-[10px]
+								font-sans
+								font-extrabold
+								uppercase
+								tracking-[0.15em]
+								bg-emerald-950/40
+								border
+								border-emerald-800/50
+								px-2
+								py-1
+								sm:py-0.5
+								rounded-xs
+								animate-pulse
+								text-emerald-400
+							"
+							>
 								🛡️ Admin Mode Active
 							</span>
 						) : (
-							<div />
+							// Maintain layout spacing when not an admin
+							<div className="h-4 sm:h-5" />
 						)}
-						<span className="text-[10px] font-sans text-zinc-400 tracking-widest uppercase">
+
+						<span className="text-[10px] font-sans text-zinc-400 tracking-widest uppercase whitespace-nowrap">
 							Notice No. #{post.id.slice(0, 6)}
 						</span>
 					</nav>
