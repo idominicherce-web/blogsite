@@ -19,7 +19,12 @@ export default async function CommentSection({
 		where: (comments, { eq }) => eq(comments.postId, postId),
 	});
 
-	// Filter down unapproved posts instantly from normal traveler viewports
+	// 1. DYNAMIC INSCRIPTION COUNT: Count ONLY approved comments (matches the QuestCard.tsx logic)
+	const approvedCommentsCount = commentsList.filter(
+		(comment) => comment.approved ?? true,
+	).length;
+
+	// 2. FILTERED LIST: Filter down unapproved posts instantly from normal traveler viewports
 	const visibleComments = commentsList.filter((comment) => {
 		const isApproved = comment.approved ?? true;
 		return isApproved || isAdmin;
@@ -36,8 +41,9 @@ export default async function CommentSection({
 				<h3 className="text-lg sm:text-xl font-sans font-bold uppercase tracking-[0.2em] sm:tracking-[0.3em] text-amber-400">
 					The Hearth Ledger
 				</h3>
+				{/* Shows the true number of approved inscriptions */}
 				<span className="text-[10px] sm:text-xs font-sans text-amber-600/80 uppercase tracking-widest font-semibold">
-					{sortedComments.length} Inscriptions
+					{approvedCommentsCount} Inscriptions
 				</span>
 			</div>
 
@@ -90,12 +96,20 @@ export default async function CommentSection({
 								<div
 									key={comment.id}
 									className={`py-5 sm:py-6 transition-all duration-200 hover:bg-amber-900/5 px-1 sm:px-2 rounded-xs ${slantVariance} ${
-										!isApproved ? "opacity-50 bg-rose-900/5" : ""
+										!isApproved
+											? "opacity-60 bg-red-900/5 border-y border-red-900/10"
+											: ""
 									}`}
 								>
 									<div className="flex items-center justify-between font-sans text-xs mb-1 gap-2">
 										<span className="font-black text-amber-950 tracking-tight flex items-center gap-1.5 font-serif text-sm sm:text-base">
 											🛡️ {comment.authorName}
+											{/* VISUAL INDICATOR TO ADMINS FOR UNAPPROVED COMMENTS */}
+											{isAdmin && !isApproved && (
+												<span className="ml-2 inline-flex items-center text-[8px] font-sans font-extrabold uppercase tracking-wider bg-red-950/15 text-red-800 px-1.5 py-0.5 rounded-xs border border-red-800/15">
+													✒️ Pending Approval
+												</span>
+											)}
 										</span>
 
 										{/* Align timestamp and moderator control badge actions horizontally */}

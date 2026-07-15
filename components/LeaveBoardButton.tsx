@@ -14,7 +14,7 @@ export default function LeaveBoardButton({
 }: LeaveBoardButtonProps) {
 	return (
 		<div
-			className="fixed left-4 z-[100] md:left-6 transition-all duration-200"
+			className="fixed left-4 z-100 md:left-6 transition-all duration-200"
 			style={{
 				top: "calc(env(safe-area-inset-top, 0px) + 12px)",
 				contain: "layout style",
