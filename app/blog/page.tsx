@@ -1,6 +1,6 @@
 // app/blog/page.tsx
 
-import { arrayContains, desc } from "drizzle-orm";
+import { arrayContains, desc, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -39,18 +39,28 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 	// Await URL search parameters for live query tracking
 	const { tag } = await searchParams;
 
-	// 1. Fetch posts (Conditionally append relational array filters if a tag parameter exists)
-	const posts = await db
+	// 1. Initiate both db requests simultaneously to execute in parallel
+	const postsPromise = db
 		.select()
 		.from(postsTable)
 		.where(tag ? arrayContains(postsTable.tags, [tag]) : undefined)
 		.orderBy(desc(postsTable.createdAt));
 
-	// 2. Fetch all unique tags currently present across the database records to generate the filter pills
-	const rawPosts = await db.select({ tags: postsTable.tags }).from(postsTable);
-	const uniqueTags = Array.from(
-		new Set(rawPosts.flatMap((p) => p.tags || [])),
-	).sort();
+	// 2. Fetch only unique tag names at the database layer (skips downloading unneeded rows)
+	const tagsPromise = db
+		.select({
+			tag: sql<string>`DISTINCT unnest(${postsTable.tags})`,
+		})
+		.from(postsTable)
+		.then((rows) =>
+			rows
+				.map((r) => r.tag)
+				.filter(Boolean)
+				.sort(),
+		);
+
+	// 3. Resolve promises concurrently
+	const [posts, uniqueTags] = await Promise.all([postsPromise, tagsPromise]);
 
 	return (
 		<>

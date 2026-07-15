@@ -1,17 +1,31 @@
 // lib/db/schema.ts
 import { relations } from "drizzle-orm";
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 
 // 1. Posts Table
-export const posts = pgTable("posts", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	title: text("title").notNull(),
-	slug: text("slug").notNull().unique(),
-	body: text("body").notNull(),
-	// Add the tags column as a text array in PostgreSQL
-	tags: text("tags").array(),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const posts = pgTable(
+	"posts",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		title: text("title").notNull(),
+		slug: text("slug").notNull().unique(),
+		body: text("body").notNull(),
+		// Add the tags column as a text array in PostgreSQL
+		tags: text("tags").array(),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+	},
+	(table) => [
+		// 🛡️ GIN index for lightning-fast lookups inside the array values
+		index("posts_tags_gin_idx").using("gin", table.tags),
+	],
+);
 
 // 2. Comments Table
 export const comments = pgTable("comments", {
