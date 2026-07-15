@@ -1,7 +1,7 @@
 // components/LeaveBoardButton.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface LeaveBoardButtonProps {
 	text?: string;
@@ -12,21 +12,20 @@ export default function LeaveBoardButton({
 	text = "Leave Board",
 	href = "/",
 }: LeaveBoardButtonProps) {
-	const router = useRouter();
-
 	return (
 		<div
-			className="fixed left-4 z-9999 md:left-6 transition-all duration-200"
+			className="fixed left-4 z-[100] md:left-6 transition-all duration-200"
 			style={{
 				top: "calc(env(safe-area-inset-top, 0px) + 12px)",
+				contain: "layout style",
 			}}
 		>
 			{/* AMBIENT BACK-GLOW RING */}
 			<div className="absolute inset-0 rounded-full bg-amber-500/10 blur-md md:hidden animate-pulse pointer-events-none" />
 
-			<button
-				type="button"
-				onClick={() => router.push(href)}
+			<Link
+				href={href}
+				scroll={true}
 				className="
 					relative
 					z-10
@@ -61,6 +60,7 @@ export default function LeaveBoardButton({
 					hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]
 					cursor-pointer
 					group
+					no-underline
 				"
 				aria-label={text}
 			>
@@ -82,7 +82,7 @@ export default function LeaveBoardButton({
 
 				{/* The text layout expands naturally on wider viewports */}
 				<span className="hidden md:inline">{text}</span>
-			</button>
+			</Link>
 		</div>
 	);
 }
