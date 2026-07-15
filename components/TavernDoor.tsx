@@ -2,15 +2,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function TavernDoor() {
 	const [open, setOpen] = useState(false);
-	const router = useRouter();
 
 	return (
-		// 💡 FIX: Removed relative paddings and bounds. Let the parent container's width dictate size.
 		<div className="w-full h-full select-none relative">
 			{/* HIGH-VISIBILITY BACKLIGHT HALO */}
 			<div className="absolute inset-0 mx-auto w-[110%] rounded-t-[9rem] bg-amber-500/10 blur-2xl pointer-events-none z-0" />
@@ -58,14 +56,14 @@ export default function TavernDoor() {
 					/>
 				</div>
 
-				{/* BUTTON INTERACTIVE LINK AREA */}
-				<button
-					type="button"
-					onClick={() => router.push("/blog")}
+				{/* INTERACTIVE NAVIGATION LINK AREA */}
+				<Link
+					href="/blog"
+					scroll={true}
 					onMouseEnter={() => setOpen(true)}
 					onMouseLeave={() => setOpen(false)}
 					onTouchStart={() => setOpen((v) => !v)}
-					className="absolute inset-2 z-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500/40 rounded-t-[7.4rem] rounded-b-xs text-left"
+					className="absolute inset-2 z-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500/40 rounded-t-[7.4rem] rounded-b-xs text-left block"
 					aria-label="Enter the Quest Board"
 				>
 					{/* MOTION PLANK NODE */}
@@ -154,7 +152,7 @@ export default function TavernDoor() {
 						{/* Inner Plate Bevel Shadows */}
 						<div className="absolute inset-0 rounded-t-[7.2rem] rounded-b-xs shadow-[inset_0_2px_6px_rgba(255,255,255,0.06),inset_0_-4px_10px_rgba(0,0,0,0.85)] pointer-events-none" />
 					</motion.div>
-				</button>
+				</Link>
 			</div>
 		</div>
 	);

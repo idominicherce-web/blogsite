@@ -1,5 +1,8 @@
 // components/PostWrapper.tsx
+"use client";
+
 import type React from "react";
+import { useEffect } from "react";
 import Footer from "@/components/Footer";
 
 export default function PostWrapper({
@@ -7,6 +10,11 @@ export default function PostWrapper({
 }: {
 	children: React.ReactNode;
 }) {
+	// Force-reset scroll position to the top-left when the wrapper mounts
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, []);
+
 	const embers = Array.from({ length: 35 }).map((_, i) => ({
 		id: i,
 		left: `${((i * 7) % 90) + 5}%`,
