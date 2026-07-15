@@ -1,9 +1,11 @@
 // app/actions.ts
 "use server";
 
+import { eq, not } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { posts } from "@/lib/db/schema";
+import { comments, posts } from "@/lib/db/schema";
 
 const createPostSchema = z.object({
 	title: z.string().min(5, "Title must be at least 5 characters").max(100),
@@ -122,5 +124,24 @@ export async function createPost(
 			},
 			fields: { title, body, tags },
 		};
+	}
+}
+
+export async function toggleCommentApproval(
+	commentId: string,
+	postSlug: string,
+) {
+	try {
+		// Atomically flip the boolean flag directly on the database row
+		await db
+			.update(comments)
+			.set({ approved: not(comments.approved) })
+			.where(eq(comments.id, commentId));
+
+		// Purge the Next.js server cache to show the status instantly
+		revalidatePath(`/blog/${postSlug}`);
+		return { success: true };
+	} catch {
+		return { success: false, error: "Failed to modulate the scroll comment." };
 	}
 }

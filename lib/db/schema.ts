@@ -1,7 +1,6 @@
 // lib/db/schema.ts
-
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // 1. Posts Table
 export const posts = pgTable("posts", {
@@ -22,6 +21,8 @@ export const comments = pgTable("comments", {
 		.notNull(),
 	authorName: text("author_name").notNull(),
 	body: text("body").notNull(),
+	// MODERATION FLAG: Defaults to true so seeded data remains visible, toggleable by admin
+	approved: boolean("approved").default(true).notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
