@@ -2,8 +2,7 @@
 "use server";
 
 import { eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { comments, posts } from "@/lib/db/schema";
@@ -11,33 +10,24 @@ import { comments, posts } from "@/lib/db/schema";
 /**
  * ============================================================================
  * MVP FEATURE #8: ZOD INPUT VALIDATION SCHEMA (DYNAMIC REPLIES)
- * * Strictly validates types and sizes on the server before mutating the database.
- * * Dynamically enforces a min length of 10 for parents, but only 1 for replies.
  * ============================================================================
  */
 const createCommentSchema = z
 	.object({
 		postId: z.uuid({ error: "Invalid post identifier." }),
-
-		// Verify parentId is a valid UUID structure if provided
 		parentId: z
 			.string()
 			.uuid({ error: "Invalid parent comment identifier." })
 			.optional()
 			.nullable(),
-
-		// MVP #8 REQUIREMENT: authorName must be between 1 and 80 characters
 		authorName: z
 			.string()
 			.trim()
 			.min(1, "Name must be at least 1 character long.")
 			.max(80, "Name cannot exceed 80 characters."),
-
-		// Enforce maximum buffer overflow limit beforehand
 		body: z.string().trim().max(2000, "Comment cannot exceed 2000 characters."),
 	})
 	.superRefine((data, ctx) => {
-		// If parentId is present and valid, this is a nested reply echo
 		const isReply = !!data.parentId;
 		const minLength = isReply ? 1 : 10;
 
@@ -47,7 +37,7 @@ const createCommentSchema = z
 				message: isReply
 					? "Reply must be at least 1 character long."
 					: "Comment must be at least 10 characters long.",
-				path: ["body"], // Targets the exact input field on our client forms
+				path: ["body"],
 			});
 		}
 	});
@@ -64,8 +54,6 @@ export type ActionState = {
 /**
  * ============================================================================
  * MVP FEATURE #8: "addCommentAction" SERVER MUTATION
- * * Secures the database mutation flow. Validates input payloads on the server,
- * executes query insertions, and triggers cache revalidation.
  * ============================================================================
  */
 export async function addCommentAction(
@@ -79,12 +67,10 @@ export async function addCommentAction(
 		body: formData.get("body"),
 	};
 
-	// Parse inputs securely through the conditional refinement schema
 	const validatedFields = createCommentSchema.safeParse(rawFields);
 
 	if (!validatedFields.success) {
 		const flattened = z.flattenError(validatedFields.error);
-
 		return {
 			success: false,
 			errors: {
@@ -97,23 +83,24 @@ export async function addCommentAction(
 	const { postId, parentId, authorName, body } = validatedFields.data;
 
 	try {
-		// Perform mutation securely via the Drizzle instance
 		await db.insert(comments).values({
 			postId,
 			parentId: parentId || null,
 			authorName,
 			body,
-			approved: true, // Auto-approved by default
+			approved: true,
 		});
 
-		// Evict cached Next.js route payloads to pull fresh data immediately
+		// Expire the dynamic chronicle list cache to show updated comment counters instantly
+		updateTag("blog-posts");
+
 		revalidatePath("/blog/[slug]", "page");
 
 		return {
 			success: true,
 		};
 	} catch (error) {
-		console.error("❌ Database insertion failed:", error);
+		console.error("✕ Database insertion failed:", error);
 		return {
 			success: false,
 			errors: {
@@ -127,29 +114,18 @@ export async function addCommentAction(
 
 export type CoinState = {
 	success: boolean;
-	newCoins?: number; // Safely returns the fresh database coin count to the client
+	newCoins?: number;
 	error?: string;
 };
 
 /**
  * ============================================================================
- * SECURED COIN TOSS MUTATION
- * * Enforces a strict "one coin per post per session" rule.
- * * Prevents API request spoofing and bot spam.
+ * SECURED COIN TOSS MUTATION (COOKIE-FREE)
+ * * Increments coin counter and runs an inline revalidation.
+ * * No cookie-state resets are executed, preventing the viewport from jumping.
  * ============================================================================
  */
 export async function tossCoinAction(postId: string): Promise<CoinState> {
-	const cookieStore = await cookies();
-	const cookieName = `tossed_coin_${postId}`;
-
-	if (cookieStore.has(cookieName)) {
-		return {
-			success: false,
-			error:
-				"You have already tossed a coin to this chronicle during this visit!",
-		};
-	}
-
 	try {
 		const updatedPosts = await db
 			.update(posts)
@@ -161,22 +137,18 @@ export async function tossCoinAction(postId: string): Promise<CoinState> {
 				coins: posts.coins,
 			});
 
-		// cookieStore.set({
-		// 	name: cookieName,
-		// 	value: "tossed",
-		// 	httpOnly: true,
-		// 	secure: process.env.NODE_ENV === "production",
-		// 	sameSite: "lax",
-		// 	path: "/",
-		// });
+		// Purge the home list cache so the updated count maps to /blog immediately
+		updateTag("blog-posts");
+
+		// Refresh the current slug page view smoothly
+		revalidatePath("/blog/[slug]", "page");
 
 		return {
 			success: true,
 			newCoins: updatedPosts[0]?.coins ?? 0,
 		};
 	} catch (error) {
-		console.error(error);
-
+		console.error("✕ Coin toss database update failed:", error);
 		return {
 			success: false,
 			error: "The dynamic registry rejected your coin. Try again!",
