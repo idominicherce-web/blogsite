@@ -142,7 +142,6 @@ export async function tossCoinAction(postId: string): Promise<CoinState> {
 	const cookieStore = await cookies();
 	const cookieName = `tossed_coin_${postId}`;
 
-	// 🛡️ 1. SERVER-SIDE CHECK: Verify if session cookie already exists
 	if (cookieStore.has(cookieName)) {
 		return {
 			success: false,
@@ -152,7 +151,6 @@ export async function tossCoinAction(postId: string): Promise<CoinState> {
 	}
 
 	try {
-		// 2. Perform the update mutation and extract the returned update count directly
 		const updatedPosts = await db
 			.update(posts)
 			.set({
@@ -163,27 +161,22 @@ export async function tossCoinAction(postId: string): Promise<CoinState> {
 				coins: posts.coins,
 			});
 
-		const newCoinCount = updatedPosts[0]?.coins ?? 0;
-
-		// 3. WRITE THE LOCK: Set session cookie (active only for the current browser session)
-		cookieStore.set({
-			name: cookieName,
-			value: "tossed",
-			httpOnly: true, // Prevents client-side JS read exploits (XSS protection)
-			secure: process.env.NODE_ENV === "production", // Only transmit over HTTPS in production
-			sameSite: "lax", // Prevent CSRF attacks
-			path: "/", // Scope cookie site-wide
-		});
-
-		// 4. Revalidate ONLY the index page so that when we navigate back, the notice board updates
-		revalidatePath("/blog", "page");
+		// cookieStore.set({
+		// 	name: cookieName,
+		// 	value: "tossed",
+		// 	httpOnly: true,
+		// 	secure: process.env.NODE_ENV === "production",
+		// 	sameSite: "lax",
+		// 	path: "/",
+		// });
 
 		return {
 			success: true,
-			newCoins: newCoinCount,
+			newCoins: updatedPosts[0]?.coins ?? 0,
 		};
 	} catch (error) {
-		console.error("❌ Failed to toss coin:", error);
+		console.error(error);
+
 		return {
 			success: false,
 			error: "The dynamic registry rejected your coin. Try again!",
