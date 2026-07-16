@@ -1,5 +1,4 @@
 // app/blog/page.tsx
-
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import BlogWrapper from "@/components/BlogWrapper";
@@ -45,8 +44,6 @@ interface BlogPageProps {
 /**
  * ============================================================================
  * NEXT.JS 16 COMPLIANT OUTER LAYOUT WRAPPER (STATIC SHELL)
- * * Serves immediate, unblocked static HTML shells.
- * * defers database lookups inside a single Suspense boundary.
  * ============================================================================
  */
 export default async function BlogListPage({ searchParams }: BlogPageProps) {
@@ -60,7 +57,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 			<LeaveBoardButton />
 
 			<BlogWrapper>
-				{/* Wrap the entire dynamic page composition to force your custom skeleton transition */}
+				{/* 🚀 Suspense wraps the deferred container to allow fast dynamic page stream transitions */}
 				<Suspense fallback={<BlogListLoading />}>
 					<DeferredBlogContent
 						tag={tag}
@@ -76,7 +73,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 /**
  * ============================================================================
  * DEFERRED BLOG CONTENT CONTAINER
- * * Resolves data from our memory cache helper on the server inside Suspense.
+ * * Resolves dynamic data safely inside Suspense.
  * ============================================================================
  */
 async function DeferredBlogContent({
@@ -88,7 +85,7 @@ async function DeferredBlogContent({
 	activeSort: string;
 	search?: string;
 }) {
-	// ⚡ Reads both datasets instantly from memory (<1ms on cache hits!)
+	// ⚡ Load cached outputs in <1ms without hitting Neon DB directly
 	const uniqueTags = await getUniqueTags();
 	const posts = await getChronicles({ tag, sort: activeSort, search });
 
