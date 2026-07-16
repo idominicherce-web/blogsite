@@ -1,0 +1,1 @@
+ALTER TABLE "posts" ADD COLUMN "coins" integer DEFAULT 0 NOT NULL;

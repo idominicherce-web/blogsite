@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import LeaveBoardButton from "@/components/LeaveBoardButton";
 import PostWrapper from "@/components/PostWrapper";
+import TossCoinButton from "@/components/TossCoinButton";
 import { db } from "@/lib/db";
 import { posts } from "@/lib/db/schema";
 import CommentSection from "./CommentSection";
@@ -141,6 +142,12 @@ export default async function BlogPostPage({
 
 							{/* Aesthetic footer flourish */}
 							<footer className="mt-12 pt-6 border-t border-amber-900/20 text-center space-y-2">
+								<TossCoinButton
+									postId={post.id}
+									postSlug={slug}
+									initialCoins={post.coins}
+								/>
+
 								<div className="text-amber-800/40 text-xl font-sans">✦</div>
 								<p className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-amber-800/60">
 									May this tale warm another traveler's heart.

@@ -1,7 +1,7 @@
 // app/actions.ts
 "use server";
 
-import { eq, not } from "drizzle-orm";
+import { eq, not, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -160,5 +160,28 @@ export async function toggleCommentApproval(
 		return { success: true };
 	} catch {
 		return { success: false, error: "Failed to modulate the scroll comment." };
+	}
+}
+
+/**
+ * ============================================================================
+ * STRETCH FEATURE: TOSS A COIN ('LIKE' BUTTON VARIATION)
+ * * Atomically increments the coin count for a specific chronicle.
+ * ============================================================================
+ */
+export async function tossCoinAction(postId: string, postSlug: string) {
+	try {
+		// Atomically increment the coins value by 1 directly in Postgres
+		await db
+			.update(posts)
+			.set({ coins: sql`${posts.coins} + 1` })
+			.where(eq(posts.id, postId));
+
+		// Bust the cache so the next visitor sees the updated gold count
+		revalidatePath(`/blog/${postSlug}`);
+		return { success: true };
+	} catch (error) {
+		console.error("Failed to toss coin:", error);
+		return { success: false, error: "Your coin missed the cup!" };
 	}
 }
