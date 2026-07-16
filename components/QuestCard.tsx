@@ -11,7 +11,7 @@ type QuestCardProps = {
 	body: string;
 	slug: string;
 	createdAt: Date;
-	coins: number; // 👈 Received coin count from QuestBoard
+	coins: number;
 	index: number;
 };
 
@@ -43,7 +43,7 @@ export default function QuestCard({
 	body,
 	slug,
 	createdAt,
-	coins, // 👈 Destructure coin value
+	coins,
 	index,
 }: QuestCardProps) {
 	const rotation = rotations[index % rotations.length];

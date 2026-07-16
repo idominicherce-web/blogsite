@@ -67,7 +67,7 @@ export default function QuestBoard({ posts }: QuestBoardProps) {
 									body={post.body}
 									slug={post.slug}
 									createdAt={post.createdAt}
-									coins={post.coins} // 👈 Dispatch coin value down to card
+									coins={post.coins}
 									index={index}
 								/>
 							))}

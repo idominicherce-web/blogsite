@@ -13,6 +13,8 @@ import {
 	comments as commentsTable,
 	posts as postsTable,
 } from "@/lib/db/schema";
+// 1. IMPORT YOUR COMPLIANT LOADING SKELETON
+import BlogListLoading from "./loading";
 
 export const metadata: Metadata = {
 	metadataBase: new URL("https://tavernblogs.vercel.app"),
@@ -35,17 +37,9 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-	// Under Next.js 16, searchParams is passed down strictly as a Promise
 	searchParams: Promise<{ tag?: string; sort?: string }>;
 }
 
-/**
- * ============================================================================
- * STATIC OUTER ROUTE SHELL (NEXT.JS 16 COMPLIANT)
- * * Does not block page prerendering with synchronous, uncached async fetches.
- * Passes the searchParams promise directly down to a Suspense-wrapped child.
- * ============================================================================
- */
 export default function BlogListPage({ searchParams }: BlogPageProps) {
 	return (
 		<>
@@ -57,18 +51,11 @@ export default function BlogListPage({ searchParams }: BlogPageProps) {
 						<TavernHeader />
 					</div>
 
-					{/* 
-						Wrap the dynamic database operations inside Suspense. 
-						This enables Next.js 16 to build a static shell for the layout
-						while letting the Quest list stream in asynchronously.
+					{/* LOADING STATE: We pass the exact custom loading skeleton
+						as the Suspense fallback. Now, whenever searchParams update,
+						the beautiful parchment-card skeletons show up instantly!
 					*/}
-					<Suspense
-						fallback={
-							<div className="flex flex-col items-center justify-center py-20 animate-pulse">
-								<div className="h-48 w-full max-w-3xl bg-amber-950/10 rounded-xs border border-amber-950/20" />
-							</div>
-						}
-					>
+					<Suspense fallback={<BlogListLoading />}>
 						<QuestListContainer searchParamsPromise={searchParams} />
 					</Suspense>
 				</main>
@@ -77,22 +64,14 @@ export default function BlogListPage({ searchParams }: BlogPageProps) {
 	);
 }
 
-/**
- * ============================================================================
- * DYNAMIC CONTAINER (UNDER THE SUSPENSE BOUNDARY)
- * * Safely handles dynamic awaiting and database calls.
- * ============================================================================
- */
 async function QuestListContainer({
 	searchParamsPromise,
 }: {
 	searchParamsPromise: Promise<{ tag?: string; sort?: string }>;
 }) {
-	// Await searchParams on demand safely beneath the boundary
 	const { tag, sort } = await searchParamsPromise;
 	const activeSort = sort || "date";
 
-	// Subquery grouping comments for accurate, SQL-side dynamic order counts
 	const commentCountsSubquery = db
 		.select({
 			postId: commentsTable.postId,
@@ -103,7 +82,6 @@ async function QuestListContainer({
 		.groupBy(commentsTable.postId)
 		.as("cc");
 
-	// Fetch dynamic posts list matching sorted options
 	const posts = await db
 		.select({
 			id: postsTable.id,
@@ -128,7 +106,6 @@ async function QuestListContainer({
 					: desc(postsTable.createdAt),
 		);
 
-	// Fetch tags promise concurrently
 	const uniqueTags = await db
 		.select({
 			tag: sql<string>`DISTINCT unnest(${postsTable.tags})`,
@@ -145,8 +122,10 @@ async function QuestListContainer({
 		<>
 			{uniqueTags.length > 0 && (
 				<div className="flex flex-wrap items-center justify-center gap-2 pb-6 mb-2 border-b border-amber-950/20 max-w-2xl mx-auto w-full relative z-30">
+					{/* 🌟 ADDED scroll={false} TO PREVENT VIEWPORT RESET ON CLICK */}
 					<Link
 						href={`/blog${activeSort !== "date" ? `?sort=${activeSort}` : ""}`}
+						scroll={false}
 						className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
 							!tag
 								? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
@@ -157,9 +136,11 @@ async function QuestListContainer({
 					</Link>
 
 					{uniqueTags.map((t) => (
+						/* 🌟 ADDED scroll={false} TO PREVENT VIEWPORT RESET ON CLICK */
 						<Link
 							key={t}
 							href={`/blog?tag=${encodeURIComponent(t)}${activeSort !== "date" ? `&sort=${activeSort}` : ""}`}
+							scroll={false}
 							className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
 								tag === t
 									? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
@@ -173,10 +154,12 @@ async function QuestListContainer({
 			)}
 
 			<div className="flex items-center justify-center gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
-				<span>Sort Chronicles:</span>
+				<span>Sort Posts:</span>
 				<div className="flex items-center gap-3 bg-black/30 border border-amber-950/40 px-4 py-1.5 rounded-sm">
+					{/* croll={false} TO ALL SORT SELECTION LINKS */}
 					<Link
 						href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=date`}
+						scroll={false}
 						className={`transition-colors hover:text-amber-400 ${
 							activeSort === "date"
 								? "text-amber-400 font-black"
@@ -188,6 +171,7 @@ async function QuestListContainer({
 					<span className="opacity-20">|</span>
 					<Link
 						href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=coins`}
+						scroll={false}
 						className={`transition-colors hover:text-amber-400 ${
 							activeSort === "coins"
 								? "text-amber-400 font-black"
@@ -199,6 +183,7 @@ async function QuestListContainer({
 					<span className="opacity-20">|</span>
 					<Link
 						href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=discussions`}
+						scroll={false}
 						className={`transition-colors hover:text-amber-400 ${
 							activeSort === "discussions"
 								? "text-amber-400 font-black"
