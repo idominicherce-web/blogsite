@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import CommentForm from "@/components/CommentForm";
 import ModeratorToggle from "@/components/ModeratorToggle";
+import CommentForm from "./CommentForm";
 
 interface Comment {
 	id: string;

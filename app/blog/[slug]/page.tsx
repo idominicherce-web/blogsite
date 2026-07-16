@@ -1,18 +1,19 @@
 // app/blog/[slug]/page.tsx
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers"; // Import cookies reader
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import LeaveBoardButton from "@/components/LeaveBoardButton";
 import PostWrapper from "@/components/PostWrapper";
-import TossCoinButton from "@/components/TossCoinButton";
 import { db } from "@/lib/db";
 import { posts } from "@/lib/db/schema";
 import CommentSection from "./CommentSection";
+import TossCoinContainer from "./TossCoinContainer";
 
 interface PageProps {
 	params: Promise<{ slug: string }>;
-	searchParams: Promise<{ admin?: string }>;
+	searchParams: Promise<{
+		admin?: string;
+	}>;
 }
 
 /**
@@ -37,10 +38,6 @@ export default async function BlogPostPage({
 
 	const ADMIN_PASSWORD = process.env.ADMIN_SECRET;
 	const isAdmin = admin === ADMIN_PASSWORD;
-
-	// 🛡️ Read the lock status for this post on the server before rendering the page
-	const cookieStore = await cookies();
-	const hasAlreadyTossed = cookieStore.has(`tossed_coin_${post.id}`);
 
 	return (
 		<>
@@ -128,11 +125,16 @@ export default async function BlogPostPage({
 
 							<footer className="mt-16 pt-8 border-t border-amber-900/20 space-y-6">
 								<div className="flex justify-start pl-2 sm:pl-4">
-									<TossCoinButton
-										postId={post.id}
-										initialCoins={post.coins}
-										hasAlreadyTossed={hasAlreadyTossed}
-									/>
+									<Suspense
+										fallback={
+											<div className="h-12 w-12 shrink-0 rounded-full border-2 bg-linear-to-br border-amber-900/10 from-stone-100 to-[#e2d6bc] animate-pulse" />
+										}
+									>
+										<TossCoinContainer
+											postId={post.id}
+											initialCoins={post.coins}
+										/>
+									</Suspense>
 								</div>
 
 								<div className="w-full h-px bg-linear-to-r from-transparent via-amber-900/15 to-transparent" />

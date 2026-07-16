@@ -1,8 +1,8 @@
 // app/blog/[slug]/CommentSection.tsx
 
-import CommentForm from "@/components/CommentForm";
-import CommentThread from "@/components/CommentThread";
 import { db } from "@/lib/db";
+import CommentForm from "./CommentForm";
+import CommentThread from "./CommentThread";
 
 interface CommentSectionProps {
 	postId: string;

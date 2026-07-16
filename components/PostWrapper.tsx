@@ -1,6 +1,7 @@
 // components/PostWrapper.tsx
 "use client";
 
+import { usePathname } from "next/navigation";
 import type React from "react";
 import { useEffect } from "react";
 import Footer from "@/components/Footer";
@@ -10,10 +11,16 @@ export default function PostWrapper({
 }: {
 	children: React.ReactNode;
 }) {
-	// Force-reset scroll position to the top-left when the wrapper mounts
+	const pathname = usePathname();
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: rerun effect on route changes
 	useEffect(() => {
-		window.scrollTo(0, 0);
-	}, []);
+		window.scrollTo({
+			top: 0,
+			left: 0,
+			behavior: "instant",
+		});
+	}, [pathname]);
 
 	const embers = Array.from({ length: 35 }).map((_, i) => ({
 		id: i,
