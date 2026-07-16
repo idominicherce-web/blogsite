@@ -1,12 +1,24 @@
 // app/blog/page.tsx
 
-import { arrayContains, desc, eq, sql } from "drizzle-orm";
+import {
+	and,
+	arrayContains,
+	desc,
+	eq,
+	ilike,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import BlogWrapper from "@/components/BlogWrapper";
 import LeaveBoardButton from "@/components/LeaveBoardButton";
+import MobileFilters from "@/components/MobileFilters";
 import QuestBoard from "@/components/QuestBoard";
+import SearchBar from "@/components/SearchBar";
+import SortFilters from "@/components/SortFilters";
+import TagFilters from "@/components/TagFilters";
 import TavernHeader from "@/components/TavernHeader";
 import { db } from "@/lib/db";
 import {
@@ -37,20 +49,25 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-	searchParams: Promise<{ tag?: string; sort?: string }>;
+	searchParams: Promise<{
+		tag?: string;
+		sort?: string;
+		search?: string;
+	}>;
 }
 
 /**
  * ============================================================================
- * NEXT.JS 16 COMPLIANT OUTER LAYOUT WRAPPER
- * * Immediately renders the static layout shell, preserving scroll states.
- * * Suspends only the core content board, keeping parent wrappers fully intact.
+ * NEXT.JS 16 COMPLIANT OUTER LAYOUT WRAPPER (REFUGEE OF DUPLICATED CLASS JSX)
+ * * Clean composition pattern. Passes query variables down to variant models.
+ * * Ensures extremely lightweight rendering payloads for dynamic visitors.
  * ============================================================================
  */
 export default async function BlogListPage({ searchParams }: BlogPageProps) {
 	const resolvedParams = await searchParams;
 	const activeSort = resolvedParams.sort || "date";
 	const tag = resolvedParams.tag;
+	const search = resolvedParams.search?.trim();
 
 	// Fetch unique tags in the layout scope so they display instantly without suspending
 	const uniqueTags = await db
@@ -75,82 +92,58 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						<TavernHeader />
 					</div>
 
-					{uniqueTags.length > 0 && (
-						<div className="flex flex-wrap items-center justify-center gap-2 pb-6 mb-2 border-b border-amber-950/20 max-w-2xl mx-auto w-full relative z-30">
-							<Link
-								href={`/blog${activeSort !== "date" ? `?sort=${activeSort}` : ""}`}
-								scroll={false}
-								className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
-									!tag
-										? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-										: "bg-black/40 border-amber-950/60 text-amber-600/60 hover:text-amber-400 hover:border-amber-950"
-								}`}
-							>
-								All Scrolls
-							</Link>
+					{/* SEARCH CHRONICLES BAR */}
+					<div className="relative z-30 pb-6 max-w-md w-full mx-auto">
+						<SearchBar initialValue={search} />
+					</div>
 
-							{uniqueTags.map((t) => (
-								<Link
-									key={t}
-									href={`/blog?tag=${encodeURIComponent(t)}${activeSort !== "date" ? `&sort=${activeSort}` : ""}`}
-									scroll={false}
-									className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
-										tag === t
-											? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-											: "bg-black/40 border-amber-950/60 text-amber-600/60 hover:text-amber-400 hover:border-amber-950"
-									}`}
-								>
-									🪙 {t}
-								</Link>
-							))}
+					{/* 📜 COMPOSABLE MOBILE COLLAPSIBLE FILTERS PANEL */}
+					<MobileFilters
+						uniqueTags={uniqueTags}
+						tag={tag}
+						activeSort={activeSort}
+						search={search}
+					/>
+
+					{/* ==================== DESKTOP-ONLY TAG FILTERS CONTAINER ==================== */}
+					{uniqueTags.length > 0 && (
+						<div
+							className="
+								hidden sm:flex flex-nowrap sm:flex-wrap 
+								items-center justify-start sm:justify-center 
+								gap-2 pb-6 mb-2 
+								border-b border-amber-950/20 
+								max-w-2xl w-full
+								relative z-30 
+								overflow-x-auto sm:overflow-visible
+								scrollbar-none px-4 sm:px-0
+								-mx-4 sm:mx-auto
+							"
+						>
+							<TagFilters
+								uniqueTags={uniqueTags}
+								activeTag={tag}
+								activeSort={activeSort}
+								search={search}
+							/>
 						</div>
 					)}
 
-					<div className="flex items-center justify-center gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
+					{/* ==================== DESKTOP-ONLY SORT FILTERS CONTAINER ==================== */}
+					<div className="hidden sm:flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
 						<span>Sort Posts:</span>
-						<div className="flex items-center gap-3 bg-black/30 border border-amber-950/40 px-4 py-1.5 rounded-sm">
-							<Link
-								href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=date`}
-								scroll={false}
-								className={`transition-colors hover:text-amber-400 ${
-									activeSort === "date"
-										? "text-amber-400 font-black"
-										: "text-amber-700/80"
-								}`}
-							>
-								📜 New Posts
-							</Link>
-							<span className="opacity-20">|</span>
-							<Link
-								href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=coins`}
-								scroll={false}
-								className={`transition-colors hover:text-amber-400 ${
-									activeSort === "coins"
-										? "text-amber-400 font-black"
-										: "text-amber-700/80"
-								}`}
-							>
-								🪙 Gold Coins
-							</Link>
-							<span className="opacity-20">|</span>
-							<Link
-								href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=discussions`}
-								scroll={false}
-								className={`transition-colors hover:text-amber-400 ${
-									activeSort === "discussions"
-										? "text-amber-400 font-black"
-										: "text-amber-700/80"
-								}`}
-							>
-								💬 Discussions
-							</Link>
+						<div className="flex items-center justify-between sm:justify-start gap-3 bg-black/30 border border-amber-950/40 px-4 py-2.5 sm:py-1.5 rounded-sm w-full sm:w-auto">
+							<SortFilters tag={tag} activeSort={activeSort} search={search} />
 						</div>
 					</div>
 
 					<div className="mt-2 md:mt-6 flex-1 relative z-10">
-						{/* Only suspend the QuestBoard so scroll-context isn't blown away on revalidation */}
 						<Suspense fallback={<BlogListLoading />}>
-							<QuestBoardContainer tag={tag} sort={activeSort} />
+							<QuestBoardContainer
+								tag={tag}
+								sort={activeSort}
+								search={search}
+							/>
 						</Suspense>
 					</div>
 				</main>
@@ -168,9 +161,11 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 async function QuestBoardContainer({
 	tag,
 	sort,
+	search,
 }: {
 	tag?: string;
 	sort: string;
+	search?: string;
 }) {
 	const commentCountsSubquery = db
 		.select({
@@ -181,6 +176,22 @@ async function QuestBoardContainer({
 		.where(eq(commentsTable.approved, true))
 		.groupBy(commentsTable.postId)
 		.as("cc");
+
+	// Unified SQL query construction utilizing strict TS arrays
+	const filters: SQL[] = [];
+
+	if (tag) {
+		filters.push(arrayContains(postsTable.tags, [tag]));
+	}
+
+	if (search) {
+		filters.push(
+			or(
+				ilike(postsTable.title, `%${search}%`) as SQL,
+				ilike(postsTable.body, `%${search}%`) as SQL,
+			) as SQL,
+		);
+	}
 
 	const posts = await db
 		.select({
@@ -197,7 +208,7 @@ async function QuestBoardContainer({
 			commentCountsSubquery,
 			eq(postsTable.id, commentCountsSubquery.postId),
 		)
-		.where(tag ? arrayContains(postsTable.tags, [tag]) : undefined)
+		.where(filters.length ? and(...filters) : undefined)
 		.orderBy(
 			sort === "coins"
 				? desc(postsTable.coins)
@@ -206,5 +217,5 @@ async function QuestBoardContainer({
 					: desc(postsTable.createdAt),
 		);
 
-	return <QuestBoard posts={posts} />;
+	return <QuestBoard posts={posts} search={search} />;
 }
