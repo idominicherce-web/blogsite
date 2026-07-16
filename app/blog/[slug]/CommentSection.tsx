@@ -1,7 +1,8 @@
 // app/blog/[slug]/CommentSection.tsx
-import ModeratorToggle from "@/components/ModeratorToggle";
+
+import CommentForm from "@/components/CommentForm";
+import CommentThread from "@/components/CommentThread";
 import { db } from "@/lib/db";
-import CommentForm from "./CommentForm";
 
 interface CommentSectionProps {
 	postId: string;
@@ -21,17 +22,17 @@ export default async function CommentSection({
 	postSlug,
 	isAdmin,
 }: CommentSectionProps) {
-	// MVP #6 REQUIREMENT: Fetches the comment entries linked specifically to the parent post
+	// MVP #6 REQUIREMENT: Fetches the comment entries linked specifically to the parent post[cite: 10]
 	const commentsList = await db.query.comments.findMany({
 		where: (comments, { eq }) => eq(comments.postId, postId),
 	});
 
-	// 1. DYNAMIC INSCRIPTION COUNT: Count ONLY approved comments (matches the QuestCard.tsx logic)
+	// 1. DYNAMIC INSCRIPTION COUNT: Count ONLY approved comments[cite: 10]
 	const approvedCommentsCount = commentsList.filter(
 		(comment) => comment.approved ?? true,
 	).length;
 
-	// 2. FILTERED LIST: Filter down unapproved posts instantly from normal traveler viewports
+	// 2. FILTERED LIST: Filter down unapproved posts instantly from normal traveler viewports[cite: 10]
 	const visibleComments = commentsList.filter((comment) => {
 		const isApproved = comment.approved ?? true;
 		return isApproved || isAdmin;
@@ -40,6 +41,10 @@ export default async function CommentSection({
 	const sortedComments = [...visibleComments].sort(
 		(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
 	);
+
+	// 3. TREE SEPARATION: Group into Parents and Child Replies[cite: 10]
+	const parentComments = sortedComments.filter((c) => !c.parentId);
+	const replyComments = sortedComments.filter((c) => c.parentId);
 
 	return (
 		<section className="space-y-6 sm:space-y-8 relative z-10">
@@ -82,13 +87,13 @@ export default async function CommentSection({
 
 				{/* List Thread inside the continuous page book layout */}
 				<div className="divide-y divide-amber-950/10 px-4 sm:px-16 pb-6 sm:pb-8">
-					{sortedComments.length === 0 ? (
+					{parentComments.length === 0 ? (
 						<p className="py-12 text-center font-serif italic text-amber-900/60 text-sm">
 							"The pages are clean. No travelers have signed the ledger book yet
 							tonight..."
 						</p>
 					) : (
-						sortedComments.map((comment, index) => {
+						parentComments.map((comment, index) => {
 							const slantVariance =
 								index % 3 === 0
 									? "rotate-[-0.3deg]"
@@ -96,59 +101,25 @@ export default async function CommentSection({
 										? "rotate-[0.4deg]"
 										: "rotate-0";
 
-							// Stylize dynamic fade mask over hidden notes when viewing in admin mode
 							const isApproved = comment.approved ?? true;
 
+							// Filter out replies connected to this specific comment[cite: 10]
+							const childReplies = replyComments.filter(
+								(r) => r.parentId === comment.id,
+							);
+
 							return (
-								<div
+								/* Render interactive client threads to hide the reply box by default[cite: 10] */
+								<CommentThread
 									key={comment.id}
-									className={`py-5 sm:py-6 transition-all duration-200 hover:bg-amber-900/5 px-1 sm:px-2 rounded-xs ${slantVariance} ${
-										!isApproved
-											? "opacity-60 bg-red-900/5 border-y border-red-900/10"
-											: ""
-									}`}
-								>
-									<div className="flex items-center justify-between font-sans text-xs mb-1 gap-2">
-										<span className="font-black text-amber-950 tracking-tight flex items-center gap-1.5 font-serif text-sm sm:text-base">
-											🛡️ {comment.authorName}
-											{/* VISUAL INDICATOR TO ADMINS FOR UNAPPROVED COMMENTS */}
-											{isAdmin && !isApproved && (
-												<span className="ml-2 inline-flex items-center text-[8px] font-sans font-extrabold uppercase tracking-wider bg-red-950/15 text-red-800 px-1.5 py-0.5 rounded-xs border border-red-800/15">
-													✒️ Pending Approval
-												</span>
-											)}
-										</span>
-
-										{/* Align timestamp and moderator control badge actions horizontally */}
-										<div className="flex items-center gap-3">
-											{/* THE TRIGGER SWITCH: Render only if admin permissions match */}
-											{isAdmin && (
-												<ModeratorToggle
-													commentId={comment.id}
-													isApproved={isApproved}
-													postSlug={postSlug}
-												/>
-											)}
-
-											<span className="text-amber-900/60 font-semibold text-[9px] sm:text-[10px] uppercase tracking-wider whitespace-nowrap">
-												{new Date(comment.createdAt).toLocaleDateString(
-													"en-US",
-													{
-														month: "short",
-														day: "numeric",
-														hour: "2-digit",
-														minute: "2-digit",
-														timeZone: "Asia/Manila",
-													},
-												)}
-											</span>
-										</div>
-									</div>
-
-									<p className="text-zinc-900 text-sm font-sans leading-relaxed whitespace-pre-wrap font-medium italic pl-3 sm:pl-5 border-l border-amber-950/10 mt-1.5">
-										"{comment.body}"
-									</p>
-								</div>
+									comment={comment}
+									postId={postId}
+									postSlug={postSlug}
+									isAdmin={isAdmin}
+									isApproved={isApproved}
+									slantVariance={slantVariance}
+									childReplies={childReplies}
+								/>
 							);
 						})
 					)}

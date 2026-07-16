@@ -1,6 +1,7 @@
 // lib/db/schema.ts
 import { relations } from "drizzle-orm";
 import {
+	type AnyPgColumn, // Added for self-referential parent column
 	boolean,
 	index,
 	integer,
@@ -40,7 +41,7 @@ export const posts = pgTable(
 	(table) => [
 		/**
 		 * PERFORMANCE OPTIMIZATION (STRETCH #12):
-		 * 🛡️ GIN (Generalized Inverted Index) for lightning-fast array lookups.
+		 * GIN (Generalized Inverted Index) for lightning-fast array lookups.
 		 * Prevents slow sequential table-scans when evaluating arrayContains(posts.tags, [tag]).
 		 */
 		index("posts_tags_gin_idx").using("gin", table.tags),
@@ -63,6 +64,12 @@ export const comments = pgTable("comments", {
 	postId: uuid("post_id")
 		.references(() => posts.id, { onDelete: "cascade" })
 		.notNull(),
+
+	// STRETCH FEATURE: Self-referential parent column to build nested trees[cite: 9]
+	// Setting cascade on delete guarantees replies disappear if the parent comment is scrubbed.
+	parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, {
+		onDelete: "cascade",
+	}),
 
 	// MVP #1 REQUIREMENT: Required text inputs for author identifiers and message payloads
 	authorName: text("author_name").notNull(),
@@ -87,9 +94,18 @@ export const postsRelations = relations(posts, ({ many }) => ({
 	comments: many(comments),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
 	post: one(posts, {
 		fields: [comments.postId],
 		references: [posts.id],
+	}),
+	// Configure self-referential relations for declarative nested joins
+	parent: one(comments, {
+		fields: [comments.parentId],
+		references: [comments.id],
+		relationName: "replies",
+	}),
+	children: many(comments, {
+		relationName: "replies",
 	}),
 }));
