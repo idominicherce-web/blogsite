@@ -1,18 +1,27 @@
 // app/blog/[slug]/not-found.tsx
 import Link from "next/link";
 
+/**
+ * ============================================================================
+ * MVP FEATURE #5: DYNAMIC ROUTE "NOT-FOUND" CONTEXTUAL FALLBACK
+ * * Automatically loaded by Next.js when the notFound() method is executed.
+ * Informs travelers of missing records and facilitates returning safely.
+ * ============================================================================
+ */
 export default function PostNotFound() {
 	return (
 		<div className="min-h-screen bg-zinc-950 text-amber-100 font-serif antialiased flex items-center justify-center p-6 select-none">
 			{/* SOLID IRON-BOUND NOT FOUND NOTICE SLATE */}
-			<main className="max-w-md w-full rounded-lg border-4 border-amber-950 bg-linear-to-b from-[#25150b] via-[#1c0f08] to-[#120a05] p-2.5 shadow-[0_30px_70px_rgba(0,0,0,0.9)]">
+			<main className="max-w-md w-full rounded-lg border-4 border-amber-950 bg-linear-to-b from-[#25150b] via-[#1c0f08] to-[#120a05] p-2.5 shadow-[0_30px_70px_rgba(0,0,0,0.95)]">
 				<div className="relative overflow-hidden rounded-md border border-zinc-950 bg-[#120a05] p-8 text-center space-y-5">
-					{/* Corner Brackets */}
+					{/* Cast iron structural corner brackets matching layout borders */}
 					<div className="absolute left-1.5 top-1.5 h-3 w-3 bg-zinc-800 border border-zinc-950 rounded-xs" />
 					<div className="absolute right-1.5 top-1.5 h-3 w-3 bg-zinc-800 border border-zinc-950 rounded-xs" />
 
+					{/* Graphic icon element */}
 					<div className="text-4xl filter grayscale opacity-30 pt-2">📜</div>
 
+					{/* Primary Notification Warning */}
 					<h2 className="text-2xl font-black tracking-[0.2em] bg-linear-to-b from-amber-100 via-amber-200 to-amber-500 bg-clip-text text-transparent uppercase">
 						Post Dissolved
 					</h2>
@@ -22,6 +31,7 @@ export default function PostNotFound() {
 						has been stripped from the board.
 					</p>
 
+					{/* Return CTA button restoring listing grid */}
 					<div className="pt-4">
 						<Link
 							href="/blog"

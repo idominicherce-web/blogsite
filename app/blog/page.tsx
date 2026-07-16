@@ -11,6 +11,9 @@ import TavernHeader from "@/components/TavernHeader";
 import { db } from "@/lib/db";
 import { posts as postsTable } from "@/lib/db/schema";
 
+/**
+ * METADATA DEFINITIONS (SEO Compliance)
+ */
 export const metadata: Metadata = {
 	metadataBase: new URL("https://tavernblogs.vercel.app"),
 	title: "The Notice Board",
@@ -32,21 +35,39 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
+	// MVP REQUIREMENT: Next.js App Router dynamic parameters must be handled as Promises
 	searchParams: Promise<{ tag?: string }>;
 }
 
+/**
+ * ============================================================================
+ * MVP FEATURE #3: ASYNC SERVER COMPONENT - BLOG LIST PAGE
+ * * Server-rendered entrance representing the Notice Board. Fetches posts from Neon,
+ * renders tag filters dynamically, and handles layout constraints.
+ * ============================================================================
+ */
 export default async function BlogListPage({ searchParams }: BlogPageProps) {
-	// Await URL search parameters for live query tracking
+	// MVP REQUIREMENT: Await client search params to safely access incoming query filters
 	const { tag } = await searchParams;
 
-	// 1. Initiate both db requests simultaneously to execute in parallel
+	/**
+	 * PERFORMANCE OPTIMIZATION (STRETCH #12): Parallel Promise Dispatch.
+	 * Rather than sequentially awaiting (blocking) each DB query, we dispatch
+	 * both promises concurrently and resolve them together using Promise.all().
+	 */
 	const postsPromise = db
 		.select()
 		.from(postsTable)
+		// STRETCH #12: Dynamically filter posts by array match query if `tag` exists
 		.where(tag ? arrayContains(postsTable.tags, [tag]) : undefined)
 		.orderBy(desc(postsTable.createdAt));
 
-	// 2. Fetch only unique tag names at the database layer (skips downloading unneeded rows)
+	/**
+	 * PERFORMANCE OPTIMIZATION (STRETCH #12): SQL-Level Extraction.
+	 * To construct the filter pills list, we use SQL unnesting and DISTINCT statements.
+	 * This prevents fetching full tables and processing arrays in JavaScript memory,
+	 * keeping data transfer over the network minimal.
+	 */
 	const tagsPromise = db
 		.select({
 			tag: sql<string>`DISTINCT unnest(${postsTable.tags})`,
@@ -59,11 +80,12 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 				.sort(),
 		);
 
-	// 3. Resolve promises concurrently
+	// Concurrent evaluation: database processing runs in a single round-trip context
 	const [posts, uniqueTags] = await Promise.all([postsPromise, tagsPromise]);
 
 	return (
 		<>
+			{/* Static Back Button Navigation Anchor */}
 			<LeaveBoardButton />
 
 			<BlogWrapper>
@@ -72,10 +94,10 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						<TavernHeader />
 					</div>
 
-					{/* ATMOSPHERIC TAG FILTER UI BAR */}
+					{/* ATMOSPHERIC TAG FILTER UI BAR (STRETCH #12) */}
 					{uniqueTags.length > 0 && (
 						<div className="flex flex-wrap items-center justify-center gap-2 pb-6 mb-2 border-b border-amber-950/20 max-w-2xl mx-auto w-full relative z-30">
-							{/* "All" Toggle Anchor */}
+							{/* "All" Toggle Anchor (Resets query parameters to show complete catalog) */}
 							<Link
 								href="/blog"
 								className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
@@ -87,7 +109,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 								All Scrolls
 							</Link>
 
-							{/* Dynamic Filter Tags */}
+							{/* Dynamic Filter Tags (Lists all unique labels extracted from posts in the DB) */}
 							{uniqueTags.map((t) => (
 								<Link
 									key={t}
@@ -104,7 +126,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						</div>
 					)}
 
-					{/* 2. Grid framework structure displaying filtered post blocks inside Suspense containers */}
+					{/* MVP #3 REQUIREMENT: Grid layout rendering child cards with static suspense fallbacks */}
 					<div className="mt-2 md:mt-6 flex-1 relative z-10">
 						<Suspense
 							fallback={

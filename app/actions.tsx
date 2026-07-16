@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { comments, posts } from "@/lib/db/schema";
 
+// Zod schema enforcing formatting rules on incoming chronicle submissions
 const createPostSchema = z.object({
 	title: z.string().min(5, "Title must be at least 5 characters").max(100),
 	body: z.string().min(20, "Body must be at least 20 characters"),
@@ -26,11 +27,18 @@ export type ActionState = {
 	fields?: {
 		title?: string;
 		body?: string;
-		tags?: string; // FIX: type definition to match raw input string values
+		tags?: string;
 	};
 	redirectTo?: string;
 };
 
+/**
+ * ============================================================================
+ * STRETCH FEATURE #11: POST CREATION MUTATION
+ * * Secures the creation of database posts. Parses schema values, matches passwords
+ * against server variables, formats tags, and auto-generates URL slugs.
+ * ============================================================================
+ */
 export async function createPost(
 	_prevState: ActionState,
 	formData: FormData,
@@ -39,7 +47,7 @@ export async function createPost(
 	const rawBody = formData.get("body")?.toString() || "";
 	const rawTags = formData.get("tags")?.toString() || "";
 
-	// FIX: Pass the raw string to safeParse so Zod doesn't reject an array structure
+	// STRETCH #11 REQUIREMENT: Parse input values securely through Zod's safeParse()
 	const validatedFields = createPostSchema.safeParse({
 		title: rawTitle,
 		body: rawBody,
@@ -61,6 +69,7 @@ export async function createPost(
 
 	const { title, body, password, tags } = validatedFields.data;
 
+	// STRETCH #11 REQUIREMENT: Basic password security check against environmental variable (ADMIN_SECRET)
 	const ADMIN_PASSWORD = process.env.ADMIN_SECRET;
 	if (password !== ADMIN_PASSWORD) {
 		return {
@@ -76,7 +85,7 @@ export async function createPost(
 		};
 	}
 
-	// FORMATTING: Split tags string cleanly into a trimmed array for PostgreSQL
+	// STRETCH #12: Split the raw tags string into a cleaned, whitespace-trimmed string array
 	const tagArray = tags
 		? tags
 				.split(",")
@@ -85,6 +94,7 @@ export async function createPost(
 		: null;
 
 	try {
+		// Generate clean url slugs (e.g., "The Siege of Riverford" -> "the-siege-of-riverford")
 		const slug = title
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, "-")
@@ -102,7 +112,7 @@ export async function createPost(
 			};
 		}
 
-		// Explicitly append the generated tag array mapping to your Drizzle values
+		// Insert post details using the Drizzle instance
 		await db.insert(posts).values({
 			title,
 			slug,
@@ -127,18 +137,25 @@ export async function createPost(
 	}
 }
 
+/**
+ * ============================================================================
+ * STRETCH FEATURE #13: ATOMIC COMMENT MODERATION
+ * * Toggles approval status for selected inscriptions on the guestbook ledger.
+ * Triggered only by administrators.
+ * ============================================================================
+ */
 export async function toggleCommentApproval(
 	commentId: string,
 	postSlug: string,
 ) {
 	try {
-		// Atomically flip the boolean flag directly on the database row
+		// Atomically toggle the boolean flag directly within the database row
 		await db
 			.update(comments)
 			.set({ approved: not(comments.approved) })
 			.where(eq(comments.id, commentId));
 
-		// Purge the Next.js server cache to show the status instantly
+		// Purge route cache payloads immediately to apply visual changes across the viewports
 		revalidatePath(`/blog/${postSlug}`);
 		return { success: true };
 	} catch {

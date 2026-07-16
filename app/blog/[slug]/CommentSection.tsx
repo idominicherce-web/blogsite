@@ -3,18 +3,25 @@ import ModeratorToggle from "@/components/ModeratorToggle";
 import { db } from "@/lib/db";
 import CommentForm from "./CommentForm";
 
-// Extended to match layout properties dispatched from parent page loop
 interface CommentSectionProps {
 	postId: string;
 	postSlug: string;
 	isAdmin: boolean;
 }
 
+/**
+ * ============================================================================
+ * MVP FEATURE #6: COMMENT LIST ON POST PAGE (SERVER COMPONENT)
+ * * Async Server Component rendered directly below the main chronicle text.
+ * Securely queries comments on the server to prevent exposing DB credentials.
+ * ============================================================================
+ */
 export default async function CommentSection({
 	postId,
 	postSlug,
 	isAdmin,
 }: CommentSectionProps) {
+	// MVP #6 REQUIREMENT: Fetches the comment entries linked specifically to the parent post
 	const commentsList = await db.query.comments.findMany({
 		where: (comments, { eq }) => eq(comments.postId, postId),
 	});

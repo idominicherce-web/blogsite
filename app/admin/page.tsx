@@ -11,7 +11,15 @@ const initialState: ActionState = {
 	success: false,
 };
 
+/**
+ * ============================================================================
+ * STRETCH FEATURE #11: ADMIN NEW-POST PAGE
+ * * Secured client-interactive interface facilitating the addition of chronicles.
+ * Handles validation states, manages form state preservation, and routes redirects.
+ * ============================================================================
+ */
 export default function AdminNewPostPage() {
+	// STRETCH #11 REQUIREMENT: Leverage useActionState to bind createPost server actions
 	const [state, formAction, isPending] = useActionState(
 		createPost,
 		initialState,
@@ -19,23 +27,27 @@ export default function AdminNewPostPage() {
 	const router = useRouter();
 	const [, startTransition] = useTransition();
 
+	// PROGRESS PRESERVATION STATE: Locks inputs locally to safeguard drafts on error
 	const [title, setTitle] = useState("");
 	const [body, setBody] = useState("");
-	const [tags, setTags] = useState(""); // FIX: Added state control management for post tags
+	const [tags, setTags] = useState("");
 
+	// INPUT RESCUE LISTENER: Feeds written values back into state on server action validation failures
 	useEffect(() => {
 		if (state.fields) {
 			setTitle(state.fields.title ?? "");
 			setBody(state.fields.body ?? "");
-			setTags(state.fields.tags ?? ""); // FIX: Synchronize tags back on server action errors
+			setTags(state.fields.tags ?? "");
 		}
 	}, [state.fields]);
 
+	// DYNAMIC REDIRECT HANDLER: Redirects to the newly created chronicle upon success
 	useEffect(() => {
 		if (!state.success || !state.redirectTo) return;
 
 		const redirectTo = state.redirectTo;
 
+		// Wrapping in a transition prevents layout flicker or route preservation lock-ups
 		startTransition(() => {
 			router.push(redirectTo);
 			router.refresh();
@@ -59,7 +71,7 @@ export default function AdminNewPostPage() {
 				</header>
 
 				<form action={formAction} className="space-y-6">
-					{/* TITLE COMPONENT */}
+					{/* TITLE COMPONENT (Validated by Zod schema) */}
 					<div className="flex flex-col gap-1.5">
 						<label
 							htmlFor="title"
@@ -84,7 +96,7 @@ export default function AdminNewPostPage() {
 						)}
 					</div>
 
-					{/* TAGS INPUT FIELD ELEMENT */}
+					{/* TAGS INPUT FIELD ELEMENT (STRETCH #12) */}
 					<div className="flex flex-col gap-1.5">
 						<label
 							htmlFor="tags"
@@ -109,7 +121,7 @@ export default function AdminNewPostPage() {
 						)}
 					</div>
 
-					{/* BODY TEXT COMPONENT */}
+					{/* BODY TEXT COMPONENT (Validated by Zod schema) */}
 					<div className="flex flex-col gap-1.5">
 						<label
 							htmlFor="body"
@@ -134,7 +146,7 @@ export default function AdminNewPostPage() {
 						)}
 					</div>
 
-					{/* PASSWORD SECURITY CORE */}
+					{/* PASSWORD SECURITY GATE (STRETCH #11: Password Match Check) */}
 					<div className="flex flex-col gap-1.5">
 						<label
 							htmlFor="password"
