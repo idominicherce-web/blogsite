@@ -1,10 +1,11 @@
 // app/blog/[slug]/page.tsx
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import LeaveBoardButton from "@/components/LeaveBoardButton";
 import PostWrapper from "@/components/PostWrapper";
 import { db } from "@/lib/db";
-import { getSinglePostBySlug } from "@/lib/db/queries";
+import { posts } from "@/lib/db/schema";
 import CommentSection from "./CommentSection";
 import TossCoinContainer from "./TossCoinContainer";
 
@@ -17,32 +18,7 @@ interface PageProps {
 
 /**
  * ============================================================================
- * BUILD-TIME STATIC ROUTE ENUMERATOR
- * * Satisfies Next.js 16's cacheComponents validation checks.
- * ============================================================================
- */
-export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-	try {
-		const postsList = await db.query.posts.findMany({
-			columns: {
-				slug: true,
-			},
-		});
-
-		return postsList.map((p) => ({
-			slug: p.slug,
-		}));
-	} catch (error) {
-		console.error("⚠️ Failed to generate static params during build:", error);
-		return [];
-	}
-}
-
-/**
- * ============================================================================
  * MVP FEATURE #5: INDIVIDUAL BLOG POST ROUTE
- * * Static Shell: Header, metadata, and post body are cached and compiled at build time.
- * * Dynamic Islands: Coin counter and comments sections are deferred in Suspense.
  * ============================================================================
  */
 export default async function BlogPostPage({
@@ -52,8 +28,9 @@ export default async function BlogPostPage({
 	const { slug } = await params;
 	const { admin } = await searchParams;
 
-	// ⚡ Cached read completes instantly
-	const post = await getSinglePostBySlug(slug);
+	const post = await db.query.posts.findFirst({
+		where: eq(posts.slug, slug),
+	});
 
 	if (!post) {
 		notFound();
@@ -148,7 +125,6 @@ export default async function BlogPostPage({
 
 							<footer className="mt-16 pt-8 border-t border-amber-900/20 space-y-6">
 								<div className="flex justify-start pl-2 sm:pl-4">
-									{/* 🚀 Dynamic coins section wrapped in isolation */}
 									<Suspense
 										fallback={
 											<div className="h-12 w-12 shrink-0 rounded-full border-2 bg-linear-to-br border-amber-900/10 from-stone-100 to-[#e2d6bc] animate-pulse" />
@@ -182,7 +158,6 @@ export default async function BlogPostPage({
 					</div>
 
 					<div className="pt-2 relative z-20">
-						{/* 🚀 Dynamic interactive comments ledger wrapped in isolation */}
 						<Suspense
 							fallback={
 								<div className="space-y-4 animate-pulse bg-amber-950/10 p-8 rounded">
@@ -192,7 +167,7 @@ export default async function BlogPostPage({
 								</div>
 							}
 						>
-							<CommentSectionContainer
+							<CommentSection
 								postId={post.id}
 								postSlug={slug}
 								isAdmin={isAdmin}
@@ -202,26 +177,5 @@ export default async function BlogPostPage({
 				</main>
 			</PostWrapper>
 		</>
-	);
-}
-
-/**
- * ============================================================================
- * UNCACHED COMMENT SECTION CONTAINER (DYNAMIC ISLET)
- * * This async component is kept strictly inside the Suspense boundary.
- * * It shields the static page from any uncached database lookups during compiling.
- * ============================================================================
- */
-async function CommentSectionContainer({
-	postId,
-	postSlug,
-	isAdmin,
-}: {
-	postId: string;
-	postSlug: string;
-	isAdmin: boolean;
-}) {
-	return (
-		<CommentSection postId={postId} postSlug={postSlug} isAdmin={isAdmin} />
 	);
 }
