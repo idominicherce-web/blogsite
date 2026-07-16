@@ -32,7 +32,7 @@ async function CommentCountBadge({ postId }: { postId: string }) {
 
 	return (
 		<span className="font-sans text-[10px] font-bold uppercase tracking-wider text-amber-900/60 bg-amber-950/5 px-2 py-0.5 rounded-xs">
-			📜 {commentsList.length} Inscriptions
+			📜 {commentsList.length} NOTES
 		</span>
 	);
 }

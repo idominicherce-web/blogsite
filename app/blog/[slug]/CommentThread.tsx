@@ -118,7 +118,7 @@ export default function CommentThread({
 							>
 								<div className="flex items-center justify-between font-sans text-xs mb-1 gap-2">
 									<span className="font-serif text-xs font-bold text-stone-800 flex items-center gap-1.5">
-										🖋️ {reply.authorName}
+										✒️ {reply.authorName}
 										{isAdmin && !isReplyApproved && (
 											<span className="ml-2 text-[7px] font-sans font-extrabold uppercase tracking-wider bg-red-950/10 text-red-800 px-1 rounded-xs">
 												Pending

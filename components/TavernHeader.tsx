@@ -45,7 +45,7 @@ export default function TavernHeader() {
 					</h1>
 
 					<p className="relative z-10 mt-4 max-w-lg mx-auto text-xs sm:text-sm text-amber-100/70 italic font-serif leading-relaxed">
-						"Inscriptions, tales, and chronicles with scribes from travelers who
+						"Inscriptions, tales, and chronicles with notes from travelers who
 						passed through these iron doors."
 					</p>
 				</div>
