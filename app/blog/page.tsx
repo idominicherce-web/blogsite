@@ -1,6 +1,6 @@
 // app/blog/page.tsx
 
-import { arrayContains, desc, sql } from "drizzle-orm";
+import { arrayContains, desc, eq, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -9,11 +9,11 @@ import LeaveBoardButton from "@/components/LeaveBoardButton";
 import QuestBoard from "@/components/QuestBoard";
 import TavernHeader from "@/components/TavernHeader";
 import { db } from "@/lib/db";
-import { posts as postsTable } from "@/lib/db/schema";
+import {
+	comments as commentsTable,
+	posts as postsTable,
+} from "@/lib/db/schema";
 
-/**
- * METADATA DEFINITIONS (SEO Compliance)
- */
 export const metadata: Metadata = {
 	metadataBase: new URL("https://tavernblogs.vercel.app"),
 	title: "The Notice Board",
@@ -35,40 +35,101 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-	// MVP REQUIREMENT: Next.js App Router dynamic parameters must be handled as Promises
-	searchParams: Promise<{ tag?: string }>;
+	// Under Next.js 16, searchParams is passed down strictly as a Promise
+	searchParams: Promise<{ tag?: string; sort?: string }>;
 }
 
 /**
  * ============================================================================
- * MVP FEATURE #3: ASYNC SERVER COMPONENT - BLOG LIST PAGE
- * * Server-rendered entrance representing the Notice Board. Fetches posts from Neon,
- * renders tag filters dynamically, and handles layout constraints.
+ * STATIC OUTER ROUTE SHELL (NEXT.JS 16 COMPLIANT)
+ * * Does not block page prerendering with synchronous, uncached async fetches.
+ * Passes the searchParams promise directly down to a Suspense-wrapped child.
  * ============================================================================
  */
-export default async function BlogListPage({ searchParams }: BlogPageProps) {
-	// MVP REQUIREMENT: Await client search params to safely access incoming query filters
-	const { tag } = await searchParams;
+export default function BlogListPage({ searchParams }: BlogPageProps) {
+	return (
+		<>
+			<LeaveBoardButton />
 
-	/**
-	 * PERFORMANCE OPTIMIZATION (STRETCH #12): Parallel Promise Dispatch.
-	 * Rather than sequentially awaiting (blocking) each DB query, we dispatch
-	 * both promises concurrently and resolve them together using Promise.all().
-	 */
-	const postsPromise = db
-		.select()
+			<BlogWrapper>
+				<main className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-12 pb-24 sm:px-6 md:pt-16 md:pb-48 lg:px-8">
+					<div className="relative pb-2 md:pb-6 w-full">
+						<TavernHeader />
+					</div>
+
+					{/* 
+						Wrap the dynamic database operations inside Suspense. 
+						This enables Next.js 16 to build a static shell for the layout
+						while letting the Quest list stream in asynchronously.
+					*/}
+					<Suspense
+						fallback={
+							<div className="flex flex-col items-center justify-center py-20 animate-pulse">
+								<div className="h-48 w-full max-w-3xl bg-amber-950/10 rounded-xs border border-amber-950/20" />
+							</div>
+						}
+					>
+						<QuestListContainer searchParamsPromise={searchParams} />
+					</Suspense>
+				</main>
+			</BlogWrapper>
+		</>
+	);
+}
+
+/**
+ * ============================================================================
+ * DYNAMIC CONTAINER (UNDER THE SUSPENSE BOUNDARY)
+ * * Safely handles dynamic awaiting and database calls.
+ * ============================================================================
+ */
+async function QuestListContainer({
+	searchParamsPromise,
+}: {
+	searchParamsPromise: Promise<{ tag?: string; sort?: string }>;
+}) {
+	// Await searchParams on demand safely beneath the boundary
+	const { tag, sort } = await searchParamsPromise;
+	const activeSort = sort || "date";
+
+	// Subquery grouping comments for accurate, SQL-side dynamic order counts
+	const commentCountsSubquery = db
+		.select({
+			postId: commentsTable.postId,
+			count: sql<number>`count(${commentsTable.id})::int`.as("comment_count"),
+		})
+		.from(commentsTable)
+		.where(eq(commentsTable.approved, true))
+		.groupBy(commentsTable.postId)
+		.as("cc");
+
+	// Fetch dynamic posts list matching sorted options
+	const posts = await db
+		.select({
+			id: postsTable.id,
+			title: postsTable.title,
+			slug: postsTable.slug,
+			body: postsTable.body,
+			createdAt: postsTable.createdAt,
+			coins: postsTable.coins,
+			commentCount: sql<number>`coalesce(${commentCountsSubquery.count}, 0)::int`,
+		})
 		.from(postsTable)
-		// STRETCH #12: Dynamically filter posts by array match query if `tag` exists
+		.leftJoin(
+			commentCountsSubquery,
+			eq(postsTable.id, commentCountsSubquery.postId),
+		)
 		.where(tag ? arrayContains(postsTable.tags, [tag]) : undefined)
-		.orderBy(desc(postsTable.createdAt));
+		.orderBy(
+			activeSort === "coins"
+				? desc(postsTable.coins)
+				: activeSort === "discussions"
+					? desc(sql`coalesce(${commentCountsSubquery.count}, 0)`)
+					: desc(postsTable.createdAt),
+		);
 
-	/**
-	 * PERFORMANCE OPTIMIZATION (STRETCH #12): SQL-Level Extraction.
-	 * To construct the filter pills list, we use SQL unnesting and DISTINCT statements.
-	 * This prevents fetching full tables and processing arrays in JavaScript memory,
-	 * keeping data transfer over the network minimal.
-	 */
-	const tagsPromise = db
+	// Fetch tags promise concurrently
+	const uniqueTags = await db
 		.select({
 			tag: sql<string>`DISTINCT unnest(${postsTable.tags})`,
 		})
@@ -80,67 +141,78 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 				.sort(),
 		);
 
-	// Concurrent evaluation: database processing runs in a single round-trip context
-	const [posts, uniqueTags] = await Promise.all([postsPromise, tagsPromise]);
-
 	return (
 		<>
-			{/* Static Back Button Navigation Anchor */}
-			<LeaveBoardButton />
+			{uniqueTags.length > 0 && (
+				<div className="flex flex-wrap items-center justify-center gap-2 pb-6 mb-2 border-b border-amber-950/20 max-w-2xl mx-auto w-full relative z-30">
+					<Link
+						href={`/blog${activeSort !== "date" ? `?sort=${activeSort}` : ""}`}
+						className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
+							!tag
+								? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+								: "bg-black/40 border-amber-950/60 text-amber-600/60 hover:text-amber-400 hover:border-amber-950"
+						}`}
+					>
+						All Scrolls
+					</Link>
 
-			<BlogWrapper>
-				<main className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-12 pb-24 sm:px-6 md:pt-16 md:pb-48 lg:px-8">
-					<div className="relative pb-2 md:pb-6 w-full">
-						<TavernHeader />
-					</div>
-
-					{/* ATMOSPHERIC TAG FILTER UI BAR (STRETCH #12) */}
-					{uniqueTags.length > 0 && (
-						<div className="flex flex-wrap items-center justify-center gap-2 pb-6 mb-2 border-b border-amber-950/20 max-w-2xl mx-auto w-full relative z-30">
-							{/* "All" Toggle Anchor (Resets query parameters to show complete catalog) */}
-							<Link
-								href="/blog"
-								className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
-									!tag
-										? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-										: "bg-black/40 border-amber-950/60 text-amber-600/60 hover:text-amber-400 hover:border-amber-950"
-								}`}
-							>
-								All Scrolls
-							</Link>
-
-							{/* Dynamic Filter Tags (Lists all unique labels extracted from posts in the DB) */}
-							{uniqueTags.map((t) => (
-								<Link
-									key={t}
-									href={`/blog?tag=${encodeURIComponent(t)}`}
-									className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
-										tag === t
-											? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-											: "bg-black/40 border-amber-950/60 text-amber-600/60 hover:text-amber-400 hover:border-amber-950"
-									}`}
-								>
-									🏷️ {t}
-								</Link>
-							))}
-						</div>
-					)}
-
-					{/* MVP #3 REQUIREMENT: Grid layout rendering child cards with static suspense fallbacks */}
-					<div className="mt-2 md:mt-6 flex-1 relative z-10">
-						<Suspense
-							fallback={
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-									<div className="h-48 w-full bg-amber-950/10 rounded-xs border border-amber-950/20" />
-									<div className="h-48 w-full bg-amber-950/10 rounded-xs border border-amber-950/20" />
-								</div>
-							}
+					{uniqueTags.map((t) => (
+						<Link
+							key={t}
+							href={`/blog?tag=${encodeURIComponent(t)}${activeSort !== "date" ? `&sort=${activeSort}` : ""}`}
+							className={`px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all duration-200 cursor-pointer ${
+								tag === t
+									? "bg-amber-500/10 border-amber-500/60 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+									: "bg-black/40 border-amber-950/60 text-amber-600/60 hover:text-amber-400 hover:border-amber-950"
+							}`}
 						>
-							<QuestBoard posts={posts} />
-						</Suspense>
-					</div>
-				</main>
-			</BlogWrapper>
+							🏷️ {t}
+						</Link>
+					))}
+				</div>
+			)}
+
+			<div className="flex items-center justify-center gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
+				<span>Sort Chronicles:</span>
+				<div className="flex items-center gap-3 bg-black/30 border border-amber-950/40 px-4 py-1.5 rounded-sm">
+					<Link
+						href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=date`}
+						className={`transition-colors hover:text-amber-400 ${
+							activeSort === "date"
+								? "text-amber-400 font-black"
+								: "text-amber-700/80"
+						}`}
+					>
+						📜 New Posts
+					</Link>
+					<span className="opacity-20">|</span>
+					<Link
+						href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=coins`}
+						className={`transition-colors hover:text-amber-400 ${
+							activeSort === "coins"
+								? "text-amber-400 font-black"
+								: "text-amber-700/80"
+						}`}
+					>
+						🪙 Gold Coins
+					</Link>
+					<span className="opacity-20">|</span>
+					<Link
+						href={`/blog?${tag ? `tag=${encodeURIComponent(tag)}&` : ""}sort=discussions`}
+						className={`transition-colors hover:text-amber-400 ${
+							activeSort === "discussions"
+								? "text-amber-400 font-black"
+								: "text-amber-700/80"
+						}`}
+					>
+						💬 Discussions
+					</Link>
+				</div>
+			</div>
+
+			<div className="mt-2 md:mt-6 flex-1 relative z-10">
+				<QuestBoard posts={posts} />
+			</div>
 		</>
 	);
 }

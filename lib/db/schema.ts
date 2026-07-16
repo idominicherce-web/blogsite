@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import {
 	boolean,
 	index,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -29,6 +30,9 @@ export const posts = pgTable(
 
 		// STRETCH FEATURE #12: Tags column added as a native text array in PostgreSQL
 		tags: text("tags").array(),
+
+		// Track the coins tossed to this chronicle
+		coins: integer("coins").default(0).notNull(),
 
 		// MVP #1 REQUIREMENT: Timestamp track default set to runtime database creation date
 		createdAt: timestamp("created_at").notNull().defaultNow(),

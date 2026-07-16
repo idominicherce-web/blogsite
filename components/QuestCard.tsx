@@ -1,6 +1,6 @@
 // components/QuestCard.tsx
 
-import { and, eq } from "drizzle-orm"; //
+import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
@@ -11,8 +11,9 @@ type QuestCardProps = {
 	body: string;
 	slug: string;
 	createdAt: Date;
+	coins: number; // 👈 Received coin count from QuestBoard
 	index: number;
-}; //
+};
 
 const rotations = [
 	"-rotate-2",
@@ -20,23 +21,20 @@ const rotations = [
 	"-rotate-1",
 	"rotate-2",
 	"rotate-0",
-]; //
+];
 
 // 1. THE DYNAMIC PIECE: Fetch and count ONLY approved, visible comments
 async function CommentCountBadge({ postId }: { postId: string }) {
 	const commentsList = await db.query.comments.findMany({
 		where: (comments) =>
-			and(
-				eq(comments.postId, postId),
-				eq(comments.approved, true), // 👈 Changed from 'isApproved' to 'approved'
-			),
+			and(eq(comments.postId, postId), eq(comments.approved, true)),
 	});
 
 	return (
 		<span className="font-sans text-[10px] font-bold uppercase tracking-wider text-amber-900/60 bg-amber-950/5 px-2 py-0.5 rounded-xs">
 			📜 {commentsList.length} Inscriptions
 		</span>
-	); //
+	);
 }
 
 export default function QuestCard({
@@ -45,9 +43,10 @@ export default function QuestCard({
 	body,
 	slug,
 	createdAt,
+	coins, // 👈 Destructure coin value
 	index,
 }: QuestCardProps) {
-	const rotation = rotations[index % rotations.length]; //
+	const rotation = rotations[index % rotations.length];
 
 	return (
 		<article
@@ -126,8 +125,13 @@ export default function QuestCard({
 				{/* Footer Navigation & Dynamic Counter Area */}
 				<div className="mt-6 pt-3 border-t border-amber-950/10">
 					<div className="flex flex-col gap-3 xs:flex-row xs:items-center xs:justify-between w-full">
-						{/* Targeted localized suspension frame */}
-						<div className="flex items-center min-h-6">
+						{/* Double Badging Container: Layout displays both coin counters and inscription listings side-by-side */}
+						<div className="flex flex-wrap items-center gap-1.5 min-h-6">
+							{/* Dynamic Coin Counter Badge */}
+							<span className="font-sans text-[10px] font-bold uppercase tracking-wider text-amber-900/70 bg-amber-950/5 px-2 py-0.5 rounded-xs">
+								🪙 {coins} {coins === 1 ? "Coin" : "Coins"}
+							</span>
+
 							<Suspense
 								fallback={
 									<div className="h-5 w-20 bg-amber-950/10 animate-pulse rounded-xs" />
@@ -164,5 +168,5 @@ export default function QuestCard({
 				</div>
 			</div>
 		</article>
-	); //
+	);
 }
