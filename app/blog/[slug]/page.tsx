@@ -148,7 +148,7 @@ export default async function BlogPostPage({
 
 							<footer className="mt-16 pt-8 border-t border-amber-900/20 space-y-6">
 								<div className="flex justify-start pl-2 sm:pl-4">
-									{/* 🚀 Dynamic coins section wrapped in isolation */}
+									{/* Dynamic coins section wrapped in isolation */}
 									<Suspense
 										fallback={
 											<div className="h-12 w-12 shrink-0 rounded-full border-2 bg-linear-to-br border-amber-900/10 from-stone-100 to-[#e2d6bc] animate-pulse" />
@@ -182,7 +182,7 @@ export default async function BlogPostPage({
 					</div>
 
 					<div className="pt-2 relative z-20">
-						{/* 🚀 Dynamic interactive comments ledger wrapped in isolation */}
+						{/* Dynamic interactive comments ledger wrapped in isolation */}
 						<Suspense
 							fallback={
 								<div className="space-y-4 animate-pulse bg-amber-950/10 p-8 rounded">

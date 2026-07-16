@@ -42,96 +42,110 @@ interface BlogPageProps {
 	}>;
 }
 
+/**
+ * ============================================================================
+ * NEXT.JS 16 COMPLIANT OUTER LAYOUT WRAPPER (STATIC SHELL)
+ * * Serves immediate, unblocked static HTML shells.
+ * * defers database lookups inside a single Suspense boundary.
+ * ============================================================================
+ */
 export default async function BlogListPage({ searchParams }: BlogPageProps) {
 	const resolvedParams = await searchParams;
 	const activeSort = resolvedParams.sort || "date";
 	const tag = resolvedParams.tag;
 	const search = resolvedParams.search?.trim();
 
-	// ⚡ Reads the cached unique tags list in <1ms
-	const uniqueTags = await getUniqueTags();
-
 	return (
 		<>
 			<LeaveBoardButton />
 
 			<BlogWrapper>
-				<main className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-12 pb-24 sm:px-6 md:pt-16 md:pb-48 lg:px-8">
-					<div className="relative pb-2 md:pb-6 w-full">
-						<TavernHeader />
-					</div>
-
-					{/* SEARCH BAR */}
-					<div className="relative z-30 pb-6 max-w-md w-full mx-auto">
-						<SearchBar initialValue={search} />
-					</div>
-
-					{/* MOBILE COLLAPSIBLE DRAWER */}
-					<MobileFilters
-						uniqueTags={uniqueTags}
+				{/* Wrap the entire dynamic page composition to force your custom skeleton transition */}
+				<Suspense fallback={<BlogListLoading />}>
+					<DeferredBlogContent
 						tag={tag}
 						activeSort={activeSort}
 						search={search}
 					/>
-
-					{/* DESKTOP TAGS */}
-					{uniqueTags.length > 0 && (
-						<div
-							className="
-								hidden sm:flex flex-nowrap sm:flex-wrap 
-								items-center justify-start sm:justify-center 
-								gap-2 pb-6 mb-2 
-								border-b border-amber-950/20 
-								max-w-2xl w-full mx-auto
-								relative z-30 
-								overflow-x-auto sm:overflow-visible
-								scrollbar-none px-4 sm:px-0 sm:mx-auto
-							"
-						>
-							<TagFilters
-								uniqueTags={uniqueTags}
-								activeTag={tag}
-								activeSort={activeSort}
-								search={search}
-							/>
-						</div>
-					)}
-
-					{/* DESKTOP SORT CONTROLS */}
-					<div className="hidden sm:flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
-						<span>Sort Posts:</span>
-						<div className="flex items-center justify-between sm:justify-start gap-3 bg-black/30 border border-amber-950/40 px-4 py-2.5 sm:py-1.5 rounded-sm w-full sm:w-auto">
-							<SortFilters tag={tag} activeSort={activeSort} search={search} />
-						</div>
-					</div>
-
-					{/* QUEST BOARD LIST CONTAINER */}
-					<div className="mt-2 md:mt-6 flex-1 relative z-10">
-						<Suspense fallback={<BlogListLoading />}>
-							<QuestBoardContainer
-								tag={tag}
-								sort={activeSort}
-								search={search}
-							/>
-						</Suspense>
-					</div>
-				</main>
+				</Suspense>
 			</BlogWrapper>
 		</>
 	);
 }
 
-async function QuestBoardContainer({
+/**
+ * ============================================================================
+ * DEFERRED BLOG CONTENT CONTAINER
+ * * Resolves data from our memory cache helper on the server inside Suspense.
+ * ============================================================================
+ */
+async function DeferredBlogContent({
 	tag,
-	sort,
+	activeSort,
 	search,
 }: {
 	tag?: string;
-	sort: string;
+	activeSort: string;
 	search?: string;
 }) {
-	// Reads our cached chronicles query combo directly from local memory
-	const posts = await getChronicles({ tag, sort, search });
+	// ⚡ Reads both datasets instantly from memory (<1ms on cache hits!)
+	const uniqueTags = await getUniqueTags();
+	const posts = await getChronicles({ tag, sort: activeSort, search });
 
-	return <QuestBoard posts={posts} search={search} />;
+	return (
+		<main className="relative z-20 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-12 pb-24 sm:px-6 md:pt-16 md:pb-48 lg:px-8">
+			<div className="relative pb-2 md:pb-6 w-full">
+				<TavernHeader />
+			</div>
+
+			{/* SEARCH BAR */}
+			<div className="relative z-30 pb-6 max-w-md w-full mx-auto">
+				<SearchBar initialValue={search} />
+			</div>
+
+			{/* MOBILE COLLAPSIBLE DRAWER */}
+			<MobileFilters
+				uniqueTags={uniqueTags}
+				tag={tag}
+				activeSort={activeSort}
+				search={search}
+			/>
+
+			{/* DESKTOP TAGS */}
+			{uniqueTags.length > 0 && (
+				<div
+					className="
+						hidden sm:flex flex-nowrap sm:flex-wrap 
+						items-center justify-start sm:justify-center 
+						gap-2 pb-6 mb-2 
+						border-b border-amber-950/20 
+						max-w-2xl w-full mx-auto
+						relative z-30 
+						overflow-x-auto sm:overflow-visible
+						scrollbar-none px-4 sm:px-0 sm:mx-auto
+					"
+				>
+					<TagFilters
+						uniqueTags={uniqueTags}
+						activeTag={tag}
+						activeSort={activeSort}
+						search={search}
+					/>
+				</div>
+			)}
+
+			{/* DESKTOP SORT CONTROLS */}
+			<div className="hidden sm:flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
+				<span>Sort Posts:</span>
+				<div className="flex items-center justify-between sm:justify-start gap-3 bg-black/30 border border-amber-950/40 px-4 py-2.5 sm:py-1.5 rounded-sm w-full sm:w-auto">
+					<SortFilters tag={tag} activeSort={activeSort} search={search} />
+				</div>
+			</div>
+
+			{/* QUEST BOARD LIST CONTAINER */}
+			<div className="mt-2 md:mt-6 flex-1 relative z-10">
+				<QuestBoard posts={posts} search={search} />
+			</div>
+		</main>
+	);
 }

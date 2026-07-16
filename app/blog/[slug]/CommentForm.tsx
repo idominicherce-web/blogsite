@@ -165,9 +165,9 @@ export default function CommentForm({
 			)}
 
 			{state.success && (
-				<div className="p-3 bg-emerald-900/20 border border-emerald-700/40 rounded-xs text-emerald-300 text-xs font-medium font-serif italic">
+				<div className="p-3 bg-emerald-950/60 border border-emerald-500/30 rounded-xs text-emerald-200 text-xs font-semibold font-serif italic shadow-[inset_0_1px_2px_rgba(16,185,129,0.1)]">
 					{isReply
-						? "✨ Your response has been securely nested under the parent traveler's scroll!"
+						? "✨ Your response has been attached to this traveler's note!"
 						: "✨ Your parchment scroll has been officially stamped and bound into the master registry ledger!"}
 				</div>
 			)}

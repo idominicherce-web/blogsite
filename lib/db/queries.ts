@@ -9,7 +9,7 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache"; // Native Next.js 16 cache utilities
+import { cacheLife, cacheTag } from "next/cache"; // Next.js 16 Cache APIs
 import { db } from "@/lib/db";
 import {
 	comments as commentsTable,
@@ -19,13 +19,13 @@ import {
 /**
  * ============================================================================
  * CACHED UNIQUE TAGS LIST
- * * "use cache" makes sure the database unnest distinct work runs exactly once.
+ * * "use cache" ensures the database unnest distinct work runs exactly once.
  * ============================================================================
  */
 export async function getUniqueTags(): Promise<string[]> {
 	"use cache";
 	cacheTag("blog-tags");
-	cacheLife("max"); // Infinite cache (recalculates only when we publish a post)
+	cacheLife("max"); // Infinite cache (recalculates only when we publish/edit a post)
 
 	const rows = await db
 		.select({
@@ -49,6 +49,7 @@ export interface ChronicleQueryParams {
  * ============================================================================
  * CACHED CHRONICLE FETCH
  * * Automatically uses parameters (tag, sort, search) as cache keys.
+ * * This query is cached globally; switching filters or sorting reads from cache.
  * ============================================================================
  */
 export async function getChronicles({
@@ -110,6 +111,8 @@ export async function getChronicles({
 		);
 }
 
+// lib/db/queries.ts (Append this to the very bottom)
+
 /**
  * ============================================================================
  * CACHED SINGLE BLOG POST QUERY
@@ -119,7 +122,7 @@ export async function getChronicles({
 export async function getSinglePostBySlug(slug: string) {
 	"use cache";
 	cacheTag(`post-${slug}`);
-	cacheLife("hours"); // Keeps individual chronicles cached dynamically
+	cacheLife("hours"); // Keeps individual chronicles cached dynamically in edge memory
 
 	return db.query.posts.findFirst({
 		where: eq(postsTable.slug, slug),
