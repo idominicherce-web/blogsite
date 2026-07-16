@@ -1,0 +1,1 @@
+CREATE INDEX "posts_tags_gin_idx" ON "posts" USING gin ("tags");

@@ -13,13 +13,21 @@ const initialState: ActionState = {
 	success: false,
 };
 
+/**
+ * ============================================================================
+ * MVP FEATURE #7: NESTED SUBMIT BUTTON (useFormStatus)
+ * * Renders the submit mechanism using React's useFormStatus().
+ * Must reside inside a child component within the <form> context.
+ * ============================================================================
+ */
 function SubmitButton() {
+	// MVP #7 REQUIREMENT: Extracts transition lifecycle state directly from the parent form
 	const { pending } = useFormStatus();
 
 	return (
 		<button
 			type="submit"
-			disabled={pending}
+			disabled={pending} // MVP #7 REQUIREMENT: Disables interaction during active database queries
 			className="
 				w-full sm:w-auto 
 				px-6 py-2.5 
@@ -39,14 +47,22 @@ function SubmitButton() {
 	);
 }
 
+/**
+ * ============================================================================
+ * MVP FEATURE #7: FORM COMPONENT (CLIENT)
+ * * Implements input state tracking using React's useActionState().
+ * Safely retains written inputs when server-side validation schema constraints fail.
+ * ============================================================================
+ */
 export default function CommentForm({ postId }: CommentFormProps) {
+	// MVP #7 REQUIREMENT: Wire the UI inputs with the Server Action schema using useActionState
 	const [state, formAction] = useActionState(addCommentAction, initialState);
 
-	// 1. LOCAL CLIENT STATE: Safeguards written progress from resetting on server-action feedback
+	// FORM PROGRESS RETENTION: Locks written states in memory to prevent input loss on schema validation rejection
 	const [authorName, setAuthorName] = useState("");
 	const [body, setBody] = useState("");
 
-	// 2. SUCCESS RESET TRIGGER: Only wipes the writing slate clean when officially bound to the database
+	// SUCCESS ACTION LISTENERS: Wipes inputs ONLY when database confirmation succeeds
 	useEffect(() => {
 		if (state.success) {
 			setAuthorName("");
@@ -56,8 +72,10 @@ export default function CommentForm({ postId }: CommentFormProps) {
 
 	return (
 		<form action={formAction} className="space-y-5 font-sans">
+			{/* Hidden identifier maps the comment to the active chronicle */}
 			<input type="hidden" name="postId" value={postId} />
 
+			{/* Traveler Moniker Field */}
 			<div className="space-y-1">
 				<label
 					htmlFor="authorName"
@@ -76,6 +94,7 @@ export default function CommentForm({ postId }: CommentFormProps) {
 					className="w-full px-4 py-2.5 bg-[#fffdf9] border-2 border-[#4a3225] rounded-sm text-zinc-950 placeholder-stone-400 font-serif italic text-sm focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
 					placeholder="e.g., Sir Roland"
 				/>
+				{/* MVP #7 REQUIREMENT: Render Zod field-level validation errors */}
 				{state.errors?.authorName && (
 					<p className="text-orange-400 text-xs font-semibold pt-1">
 						⚠️ {state.errors.authorName[0]}
@@ -83,6 +102,7 @@ export default function CommentForm({ postId }: CommentFormProps) {
 				)}
 			</div>
 
+			{/* Message Body Field */}
 			<div className="space-y-1">
 				<label
 					htmlFor="body"
@@ -100,6 +120,7 @@ export default function CommentForm({ postId }: CommentFormProps) {
 					className="w-full px-4 py-2.5 bg-[#fffdf9] border-2 border-[#4a3225] rounded-sm text-zinc-950 placeholder-stone-400 font-serif italic text-sm focus:outline-none focus:border-amber-500 transition-colors resize-y shadow-inner"
 					placeholder="Leave your tale or testament written here..."
 				/>
+				{/* MVP #7 REQUIREMENT: Render Zod field-level validation errors */}
 				{state.errors?.body && (
 					<p className="text-orange-400 text-xs font-semibold pt-1">
 						⚠️ {state.errors.body[0]}
@@ -107,12 +128,14 @@ export default function CommentForm({ postId }: CommentFormProps) {
 				)}
 			</div>
 
+			{/* Render database errors caught during server mutations */}
 			{state.errors?.global && (
 				<div className="p-3 bg-red-900/20 border border-red-700/40 rounded-xs text-red-300 text-xs font-medium">
 					{state.errors.global[0]}
 				</div>
 			)}
 
+			{/* Positive Feedback Panel */}
 			{state.success && (
 				<div className="p-3 bg-emerald-900/20 border border-emerald-700/40 rounded-xs text-emerald-300 text-xs font-medium font-serif italic">
 					✨ Your parchment scroll has been officially stamped and bound into
