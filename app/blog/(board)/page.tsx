@@ -1,15 +1,5 @@
 // app/blog/page.tsx
 
-import {
-	and,
-	arrayContains,
-	desc,
-	eq,
-	ilike,
-	or,
-	type SQL,
-	sql,
-} from "drizzle-orm";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import BlogWrapper from "@/components/BlogWrapper";
@@ -20,11 +10,7 @@ import SearchBar from "@/components/SearchBar";
 import SortFilters from "@/components/SortFilters";
 import TagFilters from "@/components/TagFilters";
 import TavernHeader from "@/components/TavernHeader";
-import { db } from "@/lib/db";
-import {
-	comments as commentsTable,
-	posts as postsTable,
-} from "@/lib/db/schema";
+import { getChronicles, getUniqueTags } from "@/lib/db/queries";
 // Import your native local loading component to use as the fallback
 import BlogListLoading from "./loading";
 
@@ -56,31 +42,14 @@ interface BlogPageProps {
 	}>;
 }
 
-/**
- * ============================================================================
- * NEXT.JS 16 COMPLIANT OUTER LAYOUT WRAPPER (REFUGEE OF DUPLICATED CLASS JSX)
- * * Clean composition pattern. Passes query variables down to variant models.
- * * Ensures extremely lightweight rendering payloads for dynamic visitors.
- * ============================================================================
- */
 export default async function BlogListPage({ searchParams }: BlogPageProps) {
 	const resolvedParams = await searchParams;
 	const activeSort = resolvedParams.sort || "date";
 	const tag = resolvedParams.tag;
 	const search = resolvedParams.search?.trim();
 
-	// Fetch unique tags in the layout scope so they display instantly without suspending
-	const uniqueTags = await db
-		.select({
-			tag: sql<string>`DISTINCT unnest(${postsTable.tags})`,
-		})
-		.from(postsTable)
-		.then((rows) =>
-			rows
-				.map((r) => r.tag)
-				.filter(Boolean)
-				.sort(),
-		);
+	// ⚡ Reads the cached unique tags list in <1ms
+	const uniqueTags = await getUniqueTags();
 
 	return (
 		<>
@@ -92,12 +61,12 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						<TavernHeader />
 					</div>
 
-					{/* SEARCH CHRONICLES BAR */}
+					{/* SEARCH BAR */}
 					<div className="relative z-30 pb-6 max-w-md w-full mx-auto">
 						<SearchBar initialValue={search} />
 					</div>
 
-					{/* 📜 COMPOSABLE MOBILE COLLAPSIBLE FILTERS PANEL */}
+					{/* MOBILE COLLAPSIBLE DRAWER */}
 					<MobileFilters
 						uniqueTags={uniqueTags}
 						tag={tag}
@@ -105,7 +74,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						search={search}
 					/>
 
-					{/* ==================== DESKTOP-ONLY TAG FILTERS CONTAINER ==================== */}
+					{/* DESKTOP TAGS */}
 					{uniqueTags.length > 0 && (
 						<div
 							className="
@@ -113,11 +82,10 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 								items-center justify-start sm:justify-center 
 								gap-2 pb-6 mb-2 
 								border-b border-amber-950/20 
-								max-w-2xl w-full
+								max-w-2xl w-full mx-auto
 								relative z-30 
 								overflow-x-auto sm:overflow-visible
-								scrollbar-none px-4 sm:px-0
-								-mx-4 sm:mx-auto
+								scrollbar-none px-4 sm:px-0 sm:mx-auto
 							"
 						>
 							<TagFilters
@@ -129,7 +97,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						</div>
 					)}
 
-					{/* ==================== DESKTOP-ONLY SORT FILTERS CONTAINER ==================== */}
+					{/* DESKTOP SORT CONTROLS */}
 					<div className="hidden sm:flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[10px] font-sans font-bold uppercase tracking-widest text-amber-800/60 pb-8 relative z-30">
 						<span>Sort Posts:</span>
 						<div className="flex items-center justify-between sm:justify-start gap-3 bg-black/30 border border-amber-950/40 px-4 py-2.5 sm:py-1.5 rounded-sm w-full sm:w-auto">
@@ -137,6 +105,7 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 						</div>
 					</div>
 
+					{/* QUEST BOARD LIST CONTAINER */}
 					<div className="mt-2 md:mt-6 flex-1 relative z-10">
 						<Suspense fallback={<BlogListLoading />}>
 							<QuestBoardContainer
@@ -152,12 +121,6 @@ export default async function BlogListPage({ searchParams }: BlogPageProps) {
 	);
 }
 
-/**
- * ============================================================================
- * NESTED QUEST BOARD DATA CONTAINER
- * * Safely isolates async database loading queries below the UI layout.
- * ============================================================================
- */
 async function QuestBoardContainer({
 	tag,
 	sort,
@@ -167,55 +130,8 @@ async function QuestBoardContainer({
 	sort: string;
 	search?: string;
 }) {
-	const commentCountsSubquery = db
-		.select({
-			postId: commentsTable.postId,
-			count: sql<number>`count(${commentsTable.id})::int`.as("comment_count"),
-		})
-		.from(commentsTable)
-		.where(eq(commentsTable.approved, true))
-		.groupBy(commentsTable.postId)
-		.as("cc");
-
-	// Unified SQL query construction utilizing strict TS arrays
-	const filters: SQL[] = [];
-
-	if (tag) {
-		filters.push(arrayContains(postsTable.tags, [tag]));
-	}
-
-	if (search) {
-		filters.push(
-			or(
-				ilike(postsTable.title, `%${search}%`) as SQL,
-				ilike(postsTable.body, `%${search}%`) as SQL,
-			) as SQL,
-		);
-	}
-
-	const posts = await db
-		.select({
-			id: postsTable.id,
-			title: postsTable.title,
-			slug: postsTable.slug,
-			body: postsTable.body,
-			createdAt: postsTable.createdAt,
-			coins: postsTable.coins,
-			commentCount: sql<number>`coalesce(${commentCountsSubquery.count}, 0)::int`,
-		})
-		.from(postsTable)
-		.leftJoin(
-			commentCountsSubquery,
-			eq(postsTable.id, commentCountsSubquery.postId),
-		)
-		.where(filters.length ? and(...filters) : undefined)
-		.orderBy(
-			sort === "coins"
-				? desc(postsTable.coins)
-				: sort === "discussions"
-					? desc(sql`coalesce(${commentCountsSubquery.count}, 0)`)
-					: desc(postsTable.createdAt),
-		);
+	// Reads our cached chronicles query combo directly from local memory
+	const posts = await getChronicles({ tag, sort, search });
 
 	return <QuestBoard posts={posts} search={search} />;
 }
