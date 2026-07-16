@@ -47,7 +47,7 @@ export default async function BlogPostPage({
 	return (
 		<>
 			{/* Static Back Button Anchor (Uses Link to trigger client-side scroll restoration) */}
-			<LeaveBoardButton text="Leave Chronicles" href="/blog" />
+			<LeaveBoardButton text="Leave Post" href="/blog" />
 
 			<PostWrapper>
 				<main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-12 md:space-y-16 relative z-10 pt-4 md:pt-16">
@@ -141,17 +141,28 @@ export default async function BlogPostPage({
 							</div>
 
 							{/* Aesthetic footer flourish */}
-							<footer className="mt-12 pt-6 border-t border-amber-900/20 text-center space-y-2">
-								<TossCoinButton
-									postId={post.id}
-									postSlug={slug}
-									initialCoins={post.coins}
-								/>
+							<footer className="mt-16 pt-8 border-t border-amber-900/20 space-y-6">
+								<div className="flex justify-start pl-2 sm:pl-4">
+									<TossCoinButton
+										postId={post.id}
+										postSlug={slug}
+										initialCoins={post.coins}
+									/>
+								</div>
 
-								<div className="text-amber-800/40 text-xl font-sans">✦</div>
-								<p className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-amber-800/60">
-									May this tale warm another traveler's heart.
-								</p>
+								{/* 📜 Distinct Decorative Separator (Fades out at the edges) */}
+								<div className="w-full h-px bg-linear-to-r from-transparent via-amber-900/15 to-transparent" />
+
+								{/* Centered Blessing & Star Section */}
+								<div className="flex flex-col items-center justify-center space-y-3 text-center pt-2">
+									<div className="text-amber-800/40 text-sm font-sans select-none">
+										✦
+									</div>
+
+									<p className="text-[10px] sm:text-xs font-sans font-bold uppercase tracking-[0.25em] text-amber-800/60 px-4">
+										May this tale warm another traveler's heart.
+									</p>
+								</div>
 							</footer>
 						</article>
 
