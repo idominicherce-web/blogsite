@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+I would keep the README mostly professional and use emojis only as section markers. That tends to look cleaner for GitHub repositories while still improving readability.
+
+---
+
+# Tavern Chronicles
+
+*A performance-focused full-stack blog built with **Next.js 16**, featuring server-rendered content, Server Actions, and a PostgreSQL backend.*
+
+Tavern Chronicles was developed as part of the **Stratpoint Full-Stack Training Program (Weeks 3–4 Capabilities Showcase)** to demonstrate modern full-stack development using the latest Next.js architecture and best practices.
+
+---
+
+## Features
+
+* Server-rendered blog posts
+* Comment system powered by Server Actions
+* Partial Prerendering (PPR)
+* Neon Serverless PostgreSQL database
+* Function-level caching with Next.js Cache Components
+* Type-safe database access using Drizzle ORM
+* Server-side validation with Zod
+* Responsive fantasy-inspired UI
+* Biome linting and TypeScript strict mode
+
+---
+
+## Tech Stack
+
+| Category     | Technology                 |
+| ------------ | -------------------------- |
+| Framework    | Next.js 16 (App Router)    |
+| Language     | TypeScript                 |
+| Database     | Neon Serverless PostgreSQL |
+| ORM          | Drizzle ORM v2             |
+| Styling      | Tailwind CSS               |
+| Validation   | Zod                        |
+| Code Quality | Biome                      |
+| Runtime      | Node.js + pnpm             |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Install Dependencies
+
+Clone the repository and install the required packages.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Configure Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file in the project root.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```ini
+DATABASE_URL="postgres://username:password@host/database?sslmode=require"
 
-## Learn More
+ADMIN_SECRET="your-admin-password"
+```
 
-To learn more about Next.js, take a look at the following resources:
+> `.env.local` is excluded from version control via `.gitignore`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Setup
 
-## Deploy on Vercel
+Generate a migration after modifying `lib/db/schema.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm drizzle-kit generate
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Apply the migration to your database.
+
+```bash
+pnpm drizzle-kit migrate
+```
+
+To inspect the database locally:
+
+```bash
+pnpm db:studio
+```
+
+---
+
+## Seed the Database
+
+Populate the database with sample blog posts.
+
+```bash
+pnpm db:seed
+```
+
+The seed script creates three example chronicles:
+
+* *The Forging of the One Ring*
+* *Dúnedain Ranging Protocols*
+* *The Battle Above the Gods Eye*
+
+---
+
+## ✅ Verification
+
+Before committing changes, ensure formatting, type safety, and the production build all succeed.
+
+```bash
+pnpm biome check --write .
+pnpm tsc --noEmit
+pnpm build
+```
+
+Or run them together:
+
+```bash
+pnpm biome check --write . && pnpm tsc --noEmit && pnpm build
+```
+
+A successful production build should display `◐` indicators for routes utilizing **Partial Prerendering (PPR)**.
+
+---
+
+## 📁 Project Structure
+
+```text
+app/
+├── blog/
+│   ├── [slug]/
+│   ├── actions.ts
+│   └── page.tsx
+├── layout.tsx
+└── page.tsx
+
+components/
+lib/
+├── db/
+│   ├── schema.ts
+│   └── index.ts
+└── utils/
+
+drizzle/
+public/
+```
+
+---
+
+## Architecture Highlights
+
+* Server Components
+* Server Actions
+* Neon HTTP Driver
+* Drizzle ORM
+* Next.js Cache Components (`cacheTag()` and `cacheLife()`)
+* Partial Prerendering (PPR)
+* Zod validation
+
+---
+
+## License
+
+Created for educational purposes as part of the **Stratpoint Full-Stack Training Program**.

@@ -33,14 +33,13 @@ export default function BlogPostLoading() {
 							<div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_40px_rgba(139,92,26,0.15)] sm:shadow-[inset_0_0_60px_rgba(139,92,26,0.2)] mix-blend-multiply" />
 							<div className="pointer-events-none absolute inset-0 bg-radial from-transparent via-transparent to-amber-900/10 mix-blend-color-burn opacity-80" />
 
-							{/* Document Header Section (Using static visual assets to prevent flicker) */}
+							{/* Document Header Section */}
 							<header className="text-center border-b-2 border-dashed border-amber-900/20 pb-6 mb-6 sm:pb-8 sm:mb-8 relative flex flex-col items-center">
-								{/* Wax Seal Circle Shell */}
-								<div className="mx-auto mb-4 w-10 h-10 rounded-full bg-linear-to-br from-red-600 to-red-900 shadow-md border-2 border-red-800/60 flex items-center justify-center font-sans text-xs text-red-100 font-bold tracking-tighter select-none opacity-95">
-									D.H.
-								</div>
-								{/* Chronicle Tag Label */}
-								<p className="text-[10px] font-sans font-black uppercase tracking-[0.35em] text-amber-800/80">
+								{/* Wax Seal Stamp Placeholder (Animates as a soft red outline placeholder) */}
+								<div className="mx-auto mb-4 w-10 h-10 rounded-full bg-red-950/10 border-2 border-red-900/20 flex items-center justify-center font-sans text-xs text-red-900/30 font-bold tracking-tighter select-none" />
+
+								{/* Chronicle Tag Label Placeholder (Muted down to prevent flash) */}
+								<p className="text-[10px] font-sans font-black uppercase tracking-[0.35em] text-amber-950/20">
 									Royal Chronicle Post
 								</p>
 
