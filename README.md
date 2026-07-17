@@ -1,7 +1,3 @@
-I would keep the README mostly professional and use emojis only as section markers. That tends to look cleaner for GitHub repositories while still improving readability.
-
----
-
 # Tavern Chronicles
 
 *A performance-focused full-stack blog built with **Next.js 16**, featuring server-rendered content, Server Actions, and a PostgreSQL backend.*
